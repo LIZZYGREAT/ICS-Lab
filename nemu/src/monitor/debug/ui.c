@@ -30,7 +30,9 @@ char* rl_gets() {
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
-}
+} 
+/*notice here: cpu_exec(-1),-1 is tranformed to 2^64-1,thus making the 
+program continue till the ending or the breaking point*/
 
 static int cmd_q(char *args) {
   return -1;
@@ -38,6 +40,7 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 static int cmd_info(char *args);
+static int cmd_si(char *args);
 
 static struct {
   char *name;
@@ -48,7 +51,7 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "info","Print program status (e.g. info r for registers, info w for watchpoints)",cmd_info},
-
+  { "si", "Step one instruction exactly, or N instructions if specified", cmd_si },
   /* TODO: Add more commands */
 
 };
@@ -78,13 +81,13 @@ static int cmd_help(char *args) {
   return 0;
 }
 static int cmd_info(char *args) {
-//check if cmd is empty
+/*check if cmd is empty*/
   if (args == NULL) {
     printf("Missing argument for 'info' command.\n");
     return 0;
   }
 
-//check if cmd == r and output the info about registers
+/*check if cmd == r and output the info about registers*/
   if (strcmp(args, "r") == 0) {
     printf("%-8s 0x%08x %10d\n", "eax", cpu.eax, cpu.eax);
     printf("%-8s 0x%08x %10d\n", "ecx", cpu.ecx, cpu.ecx);
@@ -97,7 +100,7 @@ static int cmd_info(char *args) {
     printf("%-8s 0x%08x %10d\n", "eip", cpu.eip, cpu.eip);
   }
 
-//check if cmd == w and output the info about Watchpoint
+/*check if cmd == w and output the info about Watchpoint*/
   else if (strcmp(args, "w") == 0) {
     printf("Watchpoint information is not implemented yet.\n");
   }
@@ -108,6 +111,35 @@ static int cmd_info(char *args) {
 
   return 0;
 }
+
+
+static int cmd_si(char *args) {
+  uint64_t steps = 1; /*initalize step*/
+
+  if (args != NULL) {
+    if (args[0] == '-') {
+      printf("Error: Step count cannot be negative.\n");
+      return 0; 
+    }/* check args directly but not transform into uint64_t*/
+
+    char *endptr; /* the end of a char*   */
+    steps = strtoull(args, &endptr, 10);
+	/*more strict but do not check if the num is negative */
+
+    if (*endptr != '\0') {
+      printf("Error: Invalid step count '%s'. Please enter a positive integer.\n", args);
+      return 0; 
+    }
+    
+    if (steps == 0) {
+      return 0;
+    }
+  }
+
+  cpu_exec(steps);
+  return 0;
+}
+
 void ui_mainloop(int is_batch_mode) {
   if (is_batch_mode) {
     cmd_c(NULL);
@@ -119,13 +151,14 @@ void ui_mainloop(int is_batch_mode) {
     char *str_end = str + strlen(str);
 
     /* extract the first token as the command */
-    char *cmd = strtok(str, " ");
+    char *cmd = strtok(str, " ");/* use strok to split the char*     */
     if (cmd == NULL) { continue; }
 
     /* treat the remaining string as the arguments,
      * which may need further parsing
      */
     char *args = cmd + strlen(cmd) + 1;
+	/* strlen return the len excluding the "\0" */
     if (args >= str_end) {
       args = NULL;
     }
@@ -136,7 +169,8 @@ void ui_mainloop(int is_batch_mode) {
 #endif
 
     int i;
-    for (i = 0; i < NR_CMD; i ++) {
+    for (i = 0; i < NR_CMD; i ++) { 
+		/*NR_CMD means how many cmd provided*/
       if (strcmp(cmd, cmd_table[i].name) == 0) {
         if (cmd_table[i].handler(args) < 0) { return; }
         break;
