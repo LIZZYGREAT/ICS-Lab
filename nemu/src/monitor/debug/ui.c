@@ -37,6 +37,7 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
+static int cmd_info(char *args);
 
 static struct {
   char *name;
@@ -46,6 +47,7 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
+  { "info","Print program status (e.g. info r for registers, info w for watchpoints)",cmd_info},
 
   /* TODO: Add more commands */
 
@@ -75,7 +77,37 @@ static int cmd_help(char *args) {
   }
   return 0;
 }
+static int cmd_info(char *args) {
+//check if cmd is empty
+  if (args == NULL) {
+    printf("Missing argument for 'info' command.\n");
+    return 0;
+  }
 
+//check if cmd == r and output the info about registers
+  if (strcmp(args, "r") == 0) {
+    printf("%-8s 0x%08x %10d\n", "eax", cpu.eax, cpu.eax);
+    printf("%-8s 0x%08x %10d\n", "ecx", cpu.ecx, cpu.ecx);
+    printf("%-8s 0x%08x %10d\n", "edx", cpu.edx, cpu.edx);
+    printf("%-8s 0x%08x %10d\n", "ebx", cpu.ebx, cpu.ebx);
+    printf("%-8s 0x%08x %10d\n", "esp", cpu.esp, cpu.esp);
+    printf("%-8s 0x%08x %10d\n", "ebp", cpu.ebp, cpu.ebp);
+    printf("%-8s 0x%08x %10d\n", "esi", cpu.esi, cpu.esi);
+    printf("%-8s 0x%08x %10d\n", "edi", cpu.edi, cpu.edi);
+    printf("%-8s 0x%08x %10d\n", "eip", cpu.eip, cpu.eip);
+  }
+
+//check if cmd == w and output the info about Watchpoint
+  else if (strcmp(args, "w") == 0) {
+    printf("Watchpoint information is not implemented yet.\n");
+  }
+
+  else {
+    printf("Unknown argument '%s' for 'info' command.\n", args);
+  }
+
+  return 0;
+}
 void ui_mainloop(int is_batch_mode) {
   if (is_batch_mode) {
     cmd_c(NULL);
