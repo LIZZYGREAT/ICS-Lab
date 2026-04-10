@@ -41,6 +41,8 @@ static int cmd_q(char *args) {
 static int cmd_help(char *args);
 static int cmd_info(char *args);
 static int cmd_si(char *args);
+static int cmd_x(char *args);
+
 
 static struct {
   char *name;
@@ -52,6 +54,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "info","Print program status (e.g. info r for registers, info w for watchpoints)",cmd_info},
   { "si", "Step one instruction exactly, or N instructions if specified", cmd_si },
+  { "x", "Scan memory: x N EXPR. Output N consecutive 4-byte blocks starting from physical address EXPR.", cmd_x },
   /* TODO: Add more commands */
 
 };
@@ -139,7 +142,43 @@ static int cmd_si(char *args) {
   cpu_exec(steps);
   return 0;
 }
+static int cmd_x(char *args) {
+    if (args == NULL) {
+        printf("Usage: x N EXPR\n");
+        return 0;
+    }
 
+    int n;
+    vaddr_t base_addr;
+
+    if (sscanf(args, "%d %x", &n, &base_addr) != 2) {
+        printf("Invalid format. Usage: x N EXPR (e.g., x 10 0x100000)\n");
+        return 0;
+    }
+
+    if (n <= 0) {
+        printf("Invalid arguments: N must be a positive integer.\n");
+        return 0;
+    }
+
+
+    for (int i = 0; i < n; i++) {
+        if (i % 4 == 0) {
+            if (i != 0) {
+                printf("\n");
+            }
+            printf("0x%08x: ", base_addr + i * 4);
+        }
+
+        uint32_t data = vaddr_read(base_addr + i * 4, 4);
+        
+        printf("0x%08x ", data);
+    }
+    
+    printf("\n");
+
+    return 0;
+}
 void ui_mainloop(int is_batch_mode) {
   if (is_batch_mode) {
     cmd_c(NULL);
