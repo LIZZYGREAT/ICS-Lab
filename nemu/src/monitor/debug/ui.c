@@ -165,9 +165,7 @@ static int cmd_x(char *args) {
         vaddr_t current_addr = base_addr + i * 4;
 
         if (current_addr + 3 >= 0x8000000) {
-            if (i % 4 != 0) {
-                printf("\n");
-            }
+            printf("\n");
             printf("Error: Cannot access memory at address 0x%08x (Out of bounds).\n", current_addr);
             return 0; 
         }
