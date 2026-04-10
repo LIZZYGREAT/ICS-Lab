@@ -161,22 +161,29 @@ static int cmd_x(char *args) {
         return 0;
     }
 
-
     for (int i = 0; i < n; i++) {
+        vaddr_t current_addr = base_addr + i * 4;
+
+        if (current_addr + 3 >= 0x8000000) {
+            if (i % 4 != 0) {
+                printf("\n");
+            }
+            printf("Error: Cannot access memory at address 0x%08x (Out of bounds).\n", current_addr);
+            return 0; 
+        }
+
         if (i % 4 == 0) {
             if (i != 0) {
                 printf("\n");
             }
-            printf("0x%08x: ", base_addr + i * 4);
+            printf("0x%08x: ", current_addr);
         }
 
-        uint32_t data = vaddr_read(base_addr + i * 4, 4);
-        
+        uint32_t data = vaddr_read(current_addr, 4);
         printf("0x%08x ", data);
     }
-    
-    printf("\n");
 
+    printf("\n");
     return 0;
 }
 void ui_mainloop(int is_batch_mode) {
