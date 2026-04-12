@@ -8,7 +8,7 @@
 #include <readline/history.h>
 
 void cpu_exec(uint64_t);
-
+uint32_t expr(char *e, bool *success);
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 char* rl_gets() {
   static char *line_read = NULL;
@@ -42,7 +42,7 @@ static int cmd_help(char *args);
 static int cmd_info(char *args);
 static int cmd_si(char *args);
 static int cmd_x(char *args);
-
+static int cmd_p(char *args);
 
 static struct {
   char *name;
@@ -55,6 +55,7 @@ static struct {
   { "info","Print program status (e.g. info r for registers, info w for watchpoints)",cmd_info},
   { "si", "Step one instruction exactly, or N instructions if specified", cmd_si },
   { "x", "Scan memory: x N EXPR. Output N consecutive 4-byte blocks starting from physical address EXPR.", cmd_x },
+  { "p", "Expression evaluation", cmd_p },
   /* TODO: Add more commands */
 
 };
@@ -183,6 +184,22 @@ static int cmd_x(char *args) {
 
     printf("\n");
     return 0;
+}
+static int cmd_p(char *args) {
+  if (args == NULL) {
+    printf("Usage: p EXPR\n");
+    return 0;
+  }
+
+  bool success;
+  uint32_t res = expr(args, &success);
+
+  if (success) {
+    printf("%u (0x%x)\n", res, res);
+  } else {
+    printf("Invalid expression: %s\n", args);
+  }
+  return 0;
 }
 void ui_mainloop(int is_batch_mode) {
   if (is_batch_mode) {
