@@ -89,3 +89,29 @@ void print_wp() {
     curr = curr->next;
   }
 }
+bool check_wp() {
+  if (head == NULL) {
+    return false; 
+  }
+
+  WP *curr = head;
+  bool changed = false;
+
+  while (curr != NULL) {
+    bool success = true;
+    uint32_t new_val = expr(curr->expr, &success);
+
+    if (success && new_val != curr->old_val) {
+      printf("Hardware watchpoint %d: %s\n", curr->NO, curr->expr);
+      printf("Old value: %u (0x%08x)\n", curr->old_val, curr->old_val);
+      printf("New value: %u (0x%08x)\n", new_val, new_val);
+
+      curr->old_val = new_val;
+      changed = true;
+    }
+
+    curr = curr->next;
+  }
+
+  return changed;
+}
