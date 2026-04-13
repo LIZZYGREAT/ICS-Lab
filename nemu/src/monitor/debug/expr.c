@@ -140,7 +140,9 @@ int find_dominant_op(int p, int q) {
     else if (tokens[i].type == ')') count--;
     else if (count == 0) {
       int pr = get_priority(tokens[i].type);
-      if (pr <= min_priority) {
+      bool is_unary = (tokens[i].type == TK_DEREF || tokens[i].type == TK_NEG);
+      
+      if (pr < min_priority || (pr == min_priority && !is_unary)) {
         min_priority = pr;
         op = i;
       }
@@ -148,7 +150,6 @@ int find_dominant_op(int p, int q) {
   }
   return op;
 }
-
 uint32_t eval(int p, int q) {
   if (p > q) {
     assert(0); // Bad expression

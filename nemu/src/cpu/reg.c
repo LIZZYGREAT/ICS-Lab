@@ -41,3 +41,32 @@ void reg_test() {
 
   assert(eip_sample == cpu.eip);
 }
+
+uint32_t isa_reg_str2val(const char *s, bool *success) {
+  *success = true;
+
+  for (int i = R_EAX; i <= R_EDI; i++) {
+    if (strcmp(regsl[i], s) == 0) {
+      return reg_l(i);
+    }
+  }
+
+  for (int i = R_EAX; i <= R_EDI; i++) {
+    if (strcmp(regsw[i], s) == 0) {
+      return reg_w(i);
+    }
+  }
+
+  for (int i = R_AL; i <= R_BH; i++) {
+    if (strcmp(regsb[i], s) == 0) {
+      return reg_b(i);
+    }
+  }
+
+  if (strcmp("eip", s) == 0 || strcmp("pc", s) == 0) {
+    return cpu.eip;
+  }
+
+  *success = false;
+  return 0;
+}
