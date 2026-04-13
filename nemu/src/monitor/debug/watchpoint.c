@@ -1,5 +1,8 @@
+#include "nemu.h"
 #include "monitor/watchpoint.h"
 #include "monitor/expr.h"
+#include <assert.h>
+#include <string.h>
 
 #define NR_WP 32
 
@@ -18,6 +21,44 @@ void init_wp_pool() {
   free_ = wp_pool;
 }
 
-/* TODO: Implement the functionality of watchpoint */
+WP* new_wp() {
+  if (free_ == NULL) {
+    printf("Error: No free watchpoints available. Maximum limits reached.\n");
+    assert(0);
+  }
 
+  WP *wp = free_;
+  free_ = free_->next;
 
+  wp->next = head;
+  head = wp;
+
+  return wp;
+}
+
+void free_wp(WP *wp) {
+  if (wp == NULL || head == NULL) {
+    return;
+  }
+
+  if (head == wp) {
+    head = head->next;
+  } else {
+    WP *curr = head;
+    while (curr != NULL && curr->next != wp) {
+      curr = curr->next;
+    }
+    
+    if (curr != NULL) {
+      curr->next = wp->next;
+    } else {
+      printf("Error: Watchpoint %d is not in the active list.\n", wp->NO);
+      assert(0);
+    }
+  }
+
+  wp->old_val = 0;
+  memset(wp->expr, 0, sizeof(wp->expr));
+  wp->next = free_;
+  free_ = wp;
+}
