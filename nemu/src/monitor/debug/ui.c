@@ -43,21 +43,22 @@ static int cmd_info(char *args);
 static int cmd_si(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
-
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 static struct {
   char *name;
   char *description;
   int (*handler) (char *);
 } cmd_table [] = {
-  { "help", "Display informations about all supported commands", cmd_help },
-  { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },
-  { "info","Print program status (e.g. info r for registers, info w for watchpoints)",cmd_info},
-  { "si", "Step one instruction exactly, or N instructions if specified", cmd_si },
-  { "x", "Scan memory: x N EXPR. Output N consecutive 4-byte blocks starting from physical address EXPR.", cmd_x },
-  { "p", "Expression evaluation", cmd_p },
-  /* TODO: Add more commands */
-
+  { "help", "help [CMD]        - Display information about all supported commands or a specific command.", cmd_help },
+  { "c",    "c                 - Continue the execution of the program.", cmd_c },
+  { "q",    "q                 - Exit NEMU smoothly.", cmd_q },
+  { "si",   "si [N]            - Step instruction: Execute [N] instructions step by step. Default N=1.", cmd_si },
+  { "info", "info [r|w]        - Print program status: 'r' for registers, 'w' for watchpoints.", cmd_info },
+  { "p",    "p EXPR            - Print the value of the expression EXPR.", cmd_p },
+  { "x",    "x N EXPR          - Examine memory: Print [N] consecutive 32-bit values starting from the address obtained by evaluating EXPR.", cmd_x },
+  { "w",    "w EXPR            - Set a watchpoint for the expression EXPR. Execution will pause when its value changes.", cmd_w },
+  { "d",    "d N               - Delete the watchpoint with the sequence number [N].", cmd_d },
 };
 
 #define NR_CMD (sizeof(cmd_table) / sizeof(cmd_table[0]))
@@ -85,13 +86,13 @@ static int cmd_help(char *args) {
   return 0;
 }
 static int cmd_info(char *args) {
-/*check if cmd is empty*/
+  /*check if cmd is empty*/
   if (args == NULL) {
     printf("Missing argument for 'info' command.\n");
     return 0;
   }
 
-/*check if cmd == r and output the info about registers*/
+  /*check if cmd == r and output the info about registers*/
   if (strcmp(args, "r") == 0) {
     printf("%-8s 0x%08x %10d\n", "eax", cpu.eax, cpu.eax);
     printf("%-8s 0x%08x %10d\n", "ecx", cpu.ecx, cpu.ecx);
@@ -100,13 +101,14 @@ static int cmd_info(char *args) {
     printf("%-8s 0x%08x %10d\n", "esp", cpu.esp, cpu.esp);
     printf("%-8s 0x%08x %10d\n", "ebp", cpu.ebp, cpu.ebp);
     printf("%-8s 0x%08x %10d\n", "esi", cpu.esi, cpu.esi);
+    printf("----------------------------------\n");
     printf("%-8s 0x%08x %10d\n", "edi", cpu.edi, cpu.edi);
     printf("%-8s 0x%08x %10d\n", "eip", cpu.eip, cpu.eip);
   }
 
-/*check if cmd == w and output the info about Watchpoint*/
+  /*check if cmd == w and output the info about Watchpoint*/
   else if (strcmp(args, "w") == 0) {
-    printf("Watchpoint information is not implemented yet.\n");
+    print_wp(); 
   }
 
   else {
@@ -218,6 +220,51 @@ static int cmd_p(char *args) {
     printf("Invalid expression: %s\n", args);
   }
   return 0;
+}
+static int cmd_w(char *args) {
+    if (args == NULL) {
+        printf("Usage: w EXPR\n");
+        return 0;
+    }
+
+    bool success = true;
+    uint32_t init_val = expr(args, &success);
+    if (!success) {
+        printf("Error: Invalid expression '%s'. Watchpoint not created.\n", args);
+        return 0;
+    }
+
+    WP *wp = new_wp();
+
+    strncpy(wp->expr, args, sizeof(wp->expr) - 1);
+    wp->expr[sizeof(wp->expr) - 1] = '\0';
+    wp->old_val = init_val;
+
+    printf("Watchpoint %d created: %s\n", wp->NO, wp->expr);
+    printf("Initial value: %u (0x%08x)\n", init_val, init_val);
+
+    return 0;
+}
+static int cmd_d(char *args) {
+    if (args == NULL) {
+        printf("Usage: d N (N is the watchpoint sequence number)\n");
+        return 0;
+    }
+
+    int no;
+    if (sscanf(args, "%d", &no) != 1) {
+        printf("Invalid format. Usage: d N (N must be an integer)\n");
+        return 0;
+    }
+
+    bool success = delete_wp_by_no(no);
+    if (success) {
+        printf("Watchpoint %d deleted successfully.\n", no);
+    } else {
+        printf("Error: Watchpoint %d does not exist or is not active.\n", no);
+    }
+
+    return 0;
 }
 void ui_mainloop(int is_batch_mode) {
   if (is_batch_mode) {

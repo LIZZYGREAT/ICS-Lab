@@ -62,3 +62,30 @@ void free_wp(WP *wp) {
   wp->next = free_;
   free_ = wp;
 }
+bool delete_wp_by_no(int no) {
+  WP *curr = head;
+  while (curr != NULL) {
+    if (curr->NO == no) {
+      free_wp(curr);
+      return true;
+    }
+    curr = curr->next;
+  }
+  return false; 
+}
+
+void print_wp() {
+  if (head == NULL) {
+    printf("No watchpoints currently set.\n");
+    return;
+  }
+
+  printf("%-4s\t%-12s\t%s\n", "NO", "Old Value", "Expression");
+  printf("--------------------------------------------------\n");
+
+  WP *curr = head;
+  while (curr != NULL) {
+    printf("%-4d\t0x%08x\t%s\n", curr->NO, curr->old_val, curr->expr);
+    curr = curr->next;
+  }
+}
