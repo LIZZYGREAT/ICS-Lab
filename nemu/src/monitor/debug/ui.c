@@ -149,16 +149,33 @@ static int cmd_x(char *args) {
         return 0;
     }
 
+    char *n_str = strtok(args, " ");
+    if (n_str == NULL) {
+        printf("Invalid format. Usage: x N EXPR\n");
+        return 0;
+    }
+    
     int n;
-    vaddr_t base_addr;
-
-    if (sscanf(args, "%d %x", &n, &base_addr) != 2) {
-        printf("Invalid format. Usage: x N EXPR (e.g., x 10 0x100000)\n");
+    if (sscanf(n_str, "%d", &n) != 1 || n <= 0) {
+        printf("Invalid arguments: N must be a positive integer.\n");
         return 0;
     }
 
-    if (n <= 0) {
-        printf("Invalid arguments: N must be a positive integer.\n");
+    char *expr_str = n_str + strlen(n_str) + 1;
+    
+    while (*expr_str == ' ') {
+        expr_str++;
+    }
+    
+    if (*expr_str == '\0') {
+        printf("Invalid format. Missing EXPR. Usage: x N EXPR\n");
+        return 0;
+    }
+
+    bool success = true;
+    uint32_t base_addr = expr(expr_str, &success);
+    if (!success) {
+        printf("Error: Invalid expression '%s'\n", expr_str);
         return 0;
     }
 
@@ -168,7 +185,7 @@ static int cmd_x(char *args) {
         if (current_addr + 3 >= 0x8000000) {
             printf("\n");
             printf("Error: Cannot access memory at address 0x%08x (Out of bounds).\n", current_addr);
-            return 0; 
+            return 0;
         }
 
         if (i % 4 == 0) {
@@ -185,6 +202,7 @@ static int cmd_x(char *args) {
     printf("\n");
     return 0;
 }
+
 static int cmd_p(char *args) {
   if (args == NULL) {
     printf("Usage: p EXPR\n");
