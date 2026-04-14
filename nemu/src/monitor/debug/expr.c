@@ -11,7 +11,9 @@ enum {
   TK_NUM, TK_HEX, TK_REG,
   TK_DEREF, TK_NEG
 };
+
 uint32_t isa_reg_str2val(const char *s, bool *success);
+
 static struct rule {
   char *regex;
   int token_type;
@@ -82,8 +84,8 @@ static bool make_token(char *e) {
           case TK_NOTYPE: break;
           default:
             if (substr_len >= 32) {
-               // KISS: 直接拦截缓冲区溢出 [cite: 3410]
-               assert(0);
+               // KISS: 直接拦截缓冲区溢出
+               assert(0); 
             }
             tokens[nr_token].type = rules[i].token_type;
             strncpy(tokens[nr_token].str, substr_start, substr_len);
@@ -150,9 +152,11 @@ int find_dominant_op(int p, int q) {
   }
   return op;
 }
-uint32_t eval(int p, int q) {
+
+uint32_t eval(int p, int q, bool *success) {
   if (p > q) {
-    assert(0); // Bad expression
+    *success = false;
+    return 0; // Bad expression
   }
   else if (p == q) {
     uint32_t val = 0;
@@ -163,30 +167,44 @@ uint32_t eval(int p, int q) {
       sscanf(tokens[p].str, "%x", &val);
     }
     else if (tokens[p].type == TK_REG) {
-      bool success;
-      val = isa_reg_str2val(tokens[p].str + 1, &success);
-      if (!success) assert(0);
+      bool reg_success = true;
+      val = isa_reg_str2val(tokens[p].str + 1, &reg_success);
+      if (!reg_success) {
+        *success = false;
+        return 0;
+      }
     }
     return val;
   }
   else if (check_parentheses(p, q) == true) {
-    return eval(p + 1, q - 1);
+    return eval(p + 1, q - 1, success);
   }
   else {
     int op_idx = find_dominant_op(p, q);
+    if (op_idx == -1) {
+      *success = false;
+      return 0;
+    }
     int op_type = tokens[op_idx].type;
 
     if (op_idx == p) {
-      uint32_t val = eval(p + 1, q);
+      uint32_t val = eval(p + 1, q, success);
+      if (!*success) return 0;
+      
       switch (op_type) {
         case TK_DEREF: return vaddr_read(val, 4);
         case TK_NEG: return -val;
-        default: assert(0);
+        default: 
+          *success = false;
+          return 0;
       }
     }
 
-    uint32_t val1 = eval(p, op_idx - 1);
-    uint32_t val2 = eval(op_idx + 1, q);
+    uint32_t val1 = eval(p, op_idx - 1, success);
+    if (!*success) return 0;
+    
+    uint32_t val2 = eval(op_idx + 1, q, success);
+    if (!*success) return 0;
 
     switch (op_type) {
       case '+': return val1 + val2;
@@ -195,13 +213,16 @@ uint32_t eval(int p, int q) {
       case '/': 
         if (val2 == 0) {
           printf("Error: Division by zero.\n");
-          assert(0);
+          *success = false;
+          return 0;
         }
         return val1 / val2;
       case TK_EQ: return val1 == val2;
       case TK_NEQ: return val1 != val2;
       case TK_AND: return val1 && val2;
-      default: assert(0);
+      default: 
+        *success = false;
+        return 0;
     }
   }
 }
@@ -222,5 +243,6 @@ uint32_t expr(char *e, bool *success) {
   }
 
   *success = true;
-  return eval(0, nr_token - 1);
+  uint32_t result = eval(0, nr_token - 1, success);
+  return result;
 }
