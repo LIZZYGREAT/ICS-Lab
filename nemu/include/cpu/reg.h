@@ -28,7 +28,20 @@ typedef struct {
     };
 
     vaddr_t eip;
-
+    union {
+            uint32_t value;
+            struct {
+                uint32_t CF : 1;  // Bit 0: Carry Flag
+                uint32_t    : 5;  // Bits 1-5: Don't care
+                uint32_t ZF : 1;  // Bit 6: Zero Flag
+                uint32_t SF : 1;  // Bit 7: Sign Flag
+                uint32_t    : 1;  // Bit 8: Don't care
+                uint32_t IF : 1;  // Bit 9: Interrupt Enable Flag
+                uint32_t    : 1;  // Bit 10: Don't care
+                uint32_t OF : 1;  // Bit 11: Overflow Flag
+                uint32_t    : 20; // Bits 12-31: Don't care
+            };
+        } eflags;
 } CPU_state;
 extern CPU_state cpu; 
 

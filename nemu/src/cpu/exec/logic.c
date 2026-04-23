@@ -13,8 +13,21 @@ make_EHelper(and) {
 }
 
 make_EHelper(xor) {
-  TODO();
-
+  // 1. Calculate bitwise XOR and store in temporary register t0
+  rtl_xor(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write the result back to the destination
+  operand_write(id_dest, &t0);
+  
+  // 3. Update EFLAGS: ZF and SF according to the result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+  
+  // 4. Update EFLAGS: CF and OF must be cleared for logical instructions
+  cpu.eflags.CF = 0;
+  cpu.eflags.OF = 0;
+  
+  // 5. Print assembly log
   print_asm_template2(xor);
 }
 

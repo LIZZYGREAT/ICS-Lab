@@ -7,8 +7,30 @@ make_EHelper(add) {
 }
 
 make_EHelper(sub) {
-  TODO();
-
+  // 1. Calculate the subtraction result and store it in temporary register t0
+  rtl_sub(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write the result back to the destination operand
+  operand_write(id_dest, &t0);
+  
+  // 3. Update basic EFLAGS: ZF and SF based on the result and width
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+  
+  // 4. Update CF (Carry/Borrow Flag) for unsigned subtraction
+  // If destination is strictly less than source, a borrow occurred
+  cpu.eflags.CF = (id_dest->val < id_src->val) ? 1 : 0;
+  
+  // 5. Update OF (Overflow Flag) for signed subtraction
+  // Extract sign bits dynamically based on operand width
+  uint32_t sign_dest = (id_dest->val >> (id_dest->width * 8 - 1)) & 0x1;
+  uint32_t sign_src  = (id_src->val >> (id_src->width * 8 - 1)) & 0x1;
+  uint32_t sign_res  = (t0 >> (id_dest->width * 8 - 1)) & 0x1;
+  
+  // Apply the derived boolean logic for overflow detection
+  cpu.eflags.OF = ((sign_dest != sign_src) && (sign_src == sign_res)) ? 1 : 0;
+  
+  // 6. Print assembly log (Framework built-in)
   print_asm_template2(sub);
 }
 
