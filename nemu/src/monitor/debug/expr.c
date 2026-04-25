@@ -10,7 +10,7 @@ enum {
   TK_NOTYPE = 256, TK_EQ, TK_NEQ, TK_AND,
   TK_NUM, TK_HEX, TK_REG,
   TK_DEREF, TK_NEG
-};
+};  // list the elements from 256
 
 uint32_t isa_reg_str2val(const char *s, bool *success);
 
@@ -31,9 +31,11 @@ static struct rule {
   {"0x[0-9a-fA-F]+", TK_HEX}, // hex number
   {"[0-9]+", TK_NUM},   // decimal number
   {"\\$[a-zA-Z]+", TK_REG},   // register
-};
+};  //  warning!!  here the rules do not include the"TK_DEREF" and "TK_NEG"   because we don't decide the "-" and "*" means what at first
+    //  we will decide them in the function "expr()" by looking it content before.
+    //  to decouple the function "make_token" and "expr"
 
-#define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
+#define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )   // count the number of the rules 
 
 static regex_t re[NR_REGEX];
 
@@ -59,8 +61,8 @@ typedef struct token {
   char str[32];
 } Token;
 
-Token tokens[32];
-int nr_token;
+Token tokens[32];  
+int nr_token;   //  the nr_token is the global var, and the var is get its exact value in the "make_token"
 
 static bool make_token(char *e) {
   int position = 0;
@@ -74,30 +76,28 @@ static bool make_token(char *e) {
     for (i = 0; i < NR_REGEX; i ++) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
         char *substr_start = e + position;
-        int substr_len = pmatch.rm_eo;
-
+        int substr_len = pmatch.rm_eo;   // here do the "match job" get a whole token (another decouple)
         // Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
         //     i, rules[i].regex, position, substr_len, substr_len, substr_start);
         position += substr_len;
 
         switch (rules[i].token_type) {
-          case TK_NOTYPE: break;
+          case TK_NOTYPE: break;      //no type 
           default:
             if (substr_len >= 32) {
-               // KISS: 直接拦截缓冲区溢出
                assert(0); 
-            }
+            }   // check whether the token is too long
             tokens[nr_token].type = rules[i].token_type;
             strncpy(tokens[nr_token].str, substr_start, substr_len);
             tokens[nr_token].str[substr_len] = '\0';
-            nr_token ++;
+            nr_token ++;         // get the str into the tokens.
             break;
         }
         break;
       }
     }
 
-    if (i == NR_REGEX) {
+    if (i == NR_REGEX) {   // if there is no rule to be matched ,then goes here. make_token return false.
       printf("no match at position %d\n%s\n%*.s^\n", position, e, position, "");
       return false;
     }
@@ -105,19 +105,19 @@ static bool make_token(char *e) {
   return true;
 }
 
-bool check_parentheses(int p, int q) {
-  if (tokens[p].type != '(' || tokens[q].type != ')') return false;
+bool check_parentheses(int p, int q) {     // check the (,) 
+  if (tokens[p].type != '(' || tokens[q].type != ')') return false;   // check the border
   
   int count = 0;
   for (int i = p; i < q; i++) {
     if (tokens[i].type == '(') count++;
     else if (tokens[i].type == ')') count--;
-    if (count == 0) return false; 
+    if (count == 0) return false;    // if the tokens from p to q have too many ")" ,then count == 0 earlier than expected so return false.
   }
-  return count == 1;
+  return count == 1;  // to check in the end whether the ( in p can match the ) in q
 }
 
-int get_priority(int type) {
+int get_priority(int type) {  
   switch (type) {
     case TK_AND: return 1;
     case TK_EQ:
@@ -148,7 +148,9 @@ int find_dominant_op(int p, int q) {
         min_priority = pr;
         op = i;
       }
-    }
+    }   // find the dominant op(which have the least priority so that it can be caculated at last)
+        // TK_DEREF and TK_NEG can't be the dominant
+        // and among all the tokens ,they are all right-associative
   }
   return op;
 }
@@ -158,7 +160,7 @@ uint32_t eval(int p, int q, bool *success) {
     *success = false;
     return 0; // Bad expression
   }
-  else if (p == q) {
+  else if (p == q) {    // the end condition
     uint32_t val = 0;
     if (tokens[p].type == TK_NUM) {
       sscanf(tokens[p].str, "%u", &val);
@@ -176,7 +178,7 @@ uint32_t eval(int p, int q, bool *success) {
     }
     return val;
   }
-  else if (check_parentheses(p, q) == true) {
+  else if (check_parentheses(p, q) == true) {    // check (,) and recursive
     return eval(p + 1, q - 1, success);
   }
   else {
@@ -184,7 +186,7 @@ uint32_t eval(int p, int q, bool *success) {
     if (op_idx == -1) {
       *success = false;
       return 0;
-    }
+    }   // no dominant op and return false
     int op_type = tokens[op_idx].type;
 
     if (op_idx == p) {
@@ -232,7 +234,7 @@ uint32_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-
+  //to confirm the"*" and "-" represent what exact meaning by the one before token's type.
   for (int i = 0; i < nr_token; i++) {
     if (tokens[i].type == '*' && (i == 0 || (tokens[i-1].type != TK_NUM && tokens[i-1].type != TK_HEX && tokens[i-1].type != TK_REG && tokens[i-1].type != ')'))) {
       tokens[i].type = TK_DEREF;

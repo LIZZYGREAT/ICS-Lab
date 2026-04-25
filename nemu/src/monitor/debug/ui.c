@@ -45,6 +45,8 @@ static int cmd_x(char *args);
 static int cmd_p(char *args);
 static int cmd_w(char *args);
 static int cmd_d(char *args);
+
+
 static struct {
   char *name;
   char *description;
@@ -61,11 +63,11 @@ static struct {
   { "d",    "d N               - Delete the watchpoint with the sequence number [N].", cmd_d },
 };
 
-#define NR_CMD (sizeof(cmd_table) / sizeof(cmd_table[0]))
+#define NR_CMD (sizeof(cmd_table) / sizeof(cmd_table[0]))   // count the number of the commands 
 
 static int cmd_help(char *args) {
   /* extract the first argument */
-  char *arg = strtok(NULL, " ");
+  char *arg = strtok(NULL, " ");    // to split the *args by space
   int i;
 
   if (arg == NULL) {
@@ -85,6 +87,7 @@ static int cmd_help(char *args) {
   }
   return 0;
 }
+
 static int cmd_info(char *args) {
   /*check if cmd is empty*/
   if (args == NULL) {
