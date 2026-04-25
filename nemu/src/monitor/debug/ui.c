@@ -276,8 +276,8 @@ void ui_mainloop(int is_batch_mode) {
   }
 
   while (1) {
-    char *str = rl_gets();
-    char *str_end = str + strlen(str);
+    char *str = rl_gets();        // get the input
+    char *str_end = str + strlen(str);    // str is a point so str + strlen(str) mean the end of str
 
     /* extract the first token as the command */
     char *cmd = strtok(str, " ");/* use strok to split the char*     */
@@ -301,7 +301,8 @@ void ui_mainloop(int is_batch_mode) {
     for (i = 0; i < NR_CMD; i ++) { 
 		/*NR_CMD means how many cmd provided*/
       if (strcmp(cmd, cmd_table[i].name) == 0) {
-        if (cmd_table[i].handler(args) < 0) { return; }
+        // compare one by one to find which cmd it is
+        if (cmd_table[i].handler(args) < 0) { return; }// means command  not achieved yet
         break;
       }
     }

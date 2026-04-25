@@ -6,7 +6,7 @@
 
 #define NR_WP 32
 
-static WP wp_pool[NR_WP];
+static WP wp_pool[NR_WP];   //to let the space allocated be consistent
 static WP *head, *free_;
 
 void init_wp_pool() {
@@ -17,8 +17,8 @@ void init_wp_pool() {
   }
   wp_pool[NR_WP - 1].next = NULL;
 
-  head = NULL;
-  free_ = wp_pool;
+  head = NULL;    //head of busy list 
+  free_ = wp_pool;  //head of free list
 }
 
 WP* new_wp() {
@@ -28,9 +28,9 @@ WP* new_wp() {
   }
 
   WP *wp = free_;
-  free_ = free_->next;
+  free_ = free_->next;  //current point moves 
 
-  wp->next = head;
+  wp->next = head;   // let the previous head be current head's next
   head = wp;
 
   return wp;
@@ -59,8 +59,9 @@ void free_wp(WP *wp) {
 
   wp->old_val = 0;
   memset(wp->expr, 0, sizeof(wp->expr));
-  wp->next = free_;
-  free_ = wp;
+
+  wp->next = free_;  // this means to let wp be the head of free_list
+  free_ = wp;       // how this work is nearly the same as added to the busy_list
 }
 bool delete_wp_by_no(int no) {
   WP *curr = head;
