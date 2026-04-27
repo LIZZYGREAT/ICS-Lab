@@ -7,7 +7,20 @@ make_EHelper(test) {
 }
 
 make_EHelper(and) {
-  TODO();
+  // 1. Perform bitwise AND operation: t0 = dest & src
+  rtl_and(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write the result back to the destination operand
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS: ZF and SF based on the result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+
+  // 4. Clear CF and OF as per i386 manual for AND instruction
+  rtl_li(&t1, 0);
+  rtl_set_CF(&t1);
+  rtl_set_OF(&t1);
 
   print_asm_template2(and);
 }
@@ -24,8 +37,9 @@ make_EHelper(xor) {
   rtl_update_SF(&t0, id_dest->width);
   
   // 4. Update EFLAGS: CF and OF must be cleared for logical instructions
-  cpu.eflags.CF = 0;
-  cpu.eflags.OF = 0;
+  rtl_li(&t1, 0);
+  rtl_set_CF(&t1);
+  rtl_set_OF(&t1);
   
   // 5. Print assembly log
   print_asm_template2(xor);
