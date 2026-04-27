@@ -77,13 +77,47 @@ make_EHelper(cmp) {
 }
 
 make_EHelper(inc) {
-  TODO();
+  // 1. Perform increment: t0 = dest + 1
+  rtl_addi(&t0, &id_dest->val, 1);
+  
+  // 2. Write back the result
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS: ZF and SF based on the result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+
+  // 4. Update OF for INC (Overflow occurs ONLY if dest was maximum positive value)
+  // For 32-bit: 0x7FFFFFFF + 1 -> 0x80000000 (positive to negative)
+  // We can simulate this using the RTL abstraction
+  rtl_xori(&t1, &id_dest->val, ~0u >> ((4 - id_dest->width) * 8 + 1)); 
+  rtl_eq0(&t1, &t1); // t1 is 1 if dest was max positive, else 0
+  rtl_set_OF(&t1);
+
+  // NOTE: STRICTLY NO CF UPDATE FOR INC
 
   print_asm_template1(inc);
 }
 
 make_EHelper(dec) {
-  TODO();
+  // 1. Perform decrement: t0 = dest - 1
+  rtl_subi(&t0, &id_dest->val, 1);
+  
+  // 2. Write back the result
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS: ZF and SF based on the result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+
+  // 4. Update OF for DEC (Overflow occurs ONLY if dest was minimum negative value)
+  // For 32-bit: 0x80000000 - 1 -> 0x7FFFFFFF (negative to positive)
+  // Mask MSB to check if it's the minimum negative number
+  rtl_xori(&t1, &id_dest->val, 1u << (id_dest->width * 8 - 1));
+  rtl_eq0(&t1, &t1);
+  rtl_set_OF(&t1);
+
+  // NOTE: STRICTLY NO CF UPDATE FOR DEC
 
   print_asm_template1(dec);
 }
