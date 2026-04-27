@@ -50,7 +50,28 @@ make_EHelper(sub) {
 }
 
 make_EHelper(cmp) {
-  TODO();
+  // 1. Perform subtraction: t0 = dest - src
+  rtl_sub(&t0, &id_dest->val, &id_src->val);
+
+  // 2. Update ZF and SF based on the result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+
+  // 3. Update CF (Borrow Flag): set if dest < src (unsigned)
+  rtl_sltu(&t1, &id_dest->val, &id_src->val);
+  rtl_set_CF(&t1);
+
+  // 4. Update OF: set if signs of dest and src are different, 
+  // and signs of dest and result are different.
+  // OF = MSB((dest ^ src) & (dest ^ t0))
+  rtl_xor(&t1, &id_dest->val, &id_src->val);
+  rtl_xor(&t2, &id_dest->val, &t0);
+  rtl_and(&t1, &t1, &t2);
+  rtl_msb(&t1, &t1, id_dest->width);
+  rtl_set_OF(&t1);
+
+  // 5. Note: CMP does not write the result back to id_dest.
+  // We simply skip the operand_write() call here.
 
   print_asm_template2(cmp);
 }
