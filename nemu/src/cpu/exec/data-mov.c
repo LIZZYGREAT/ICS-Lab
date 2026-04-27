@@ -60,7 +60,12 @@ make_EHelper(cwtl) {
 }
 
 make_EHelper(movsx) {
+  // 1. Manually override destination width based on operand size prefix
+  // IDEXW forced it to 1, but destination is a 16-bit or 32-bit register
   id_dest->width = decoding.is_operand_size_16 ? 2 : 4;
+  // 2. Write the zero-extended value to the destination
+  // Note: id_src->val is an unsigned uint32_t, so reading a 1-byte
+  // source naturally leaves the upper 24 bits as zeros.
   rtl_sext(&t2, &id_src->val, id_src->width);
   operand_write(id_dest, &t2);
   print_asm_template2(movsx);
