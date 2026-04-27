@@ -1,7 +1,20 @@
 #include "cpu/exec.h"
 
 make_EHelper(test) {
-  TODO();
+  // 1. Perform bitwise AND operation (temporary calculation)
+  rtl_and(&t0, &id_dest->val, &id_src->val);
+
+  // 2. Update EFLAGS: ZF and SF based on the temporary result
+  rtl_update_ZF(&t0, id_dest->width);
+  rtl_update_SF(&t0, id_dest->width);
+
+  // 3. Clear CF and OF as per i386 manual for TEST instruction
+  rtl_li(&t1, 0);
+  rtl_set_CF(&t1);
+  rtl_set_OF(&t1);
+
+  // Note: TEST instruction strictly DISCARDS the result.
+  // There MUST NOT be any operand_write() call here.
 
   print_asm_template2(test);
 }
