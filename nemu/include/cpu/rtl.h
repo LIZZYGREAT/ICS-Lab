@@ -12,6 +12,8 @@ static inline void rtl_li(rtlreg_t* dest, uint32_t imm) {
   *dest = imm;
 }
 
+void rtl_setcc(rtlreg_t* dest, uint8_t subcode);
+
 #define c_add(a, b) ((a) + (b))
 #define c_sub(a, b) ((a) - (b))
 #define c_and(a, b) ((a) & (b))
@@ -110,6 +112,7 @@ static inline void rtl_sr(int r, int width, const rtlreg_t* src1) {
     default: assert(0);
   }
 }
+
 
 #define make_rtl_setget_eflags(f) \
   static inline void concat(rtl_set_, f) (const rtlreg_t* src) { \

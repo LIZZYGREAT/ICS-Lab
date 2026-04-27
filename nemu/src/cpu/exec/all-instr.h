@@ -21,3 +21,8 @@ make_EHelper(lea);
 make_EHelper(xor);
 make_EHelper(and);
 make_EHelper(cmp);
+
+
+
+
+make_EHelper(setcc);
