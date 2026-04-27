@@ -156,18 +156,18 @@ static inline void rtl_pop(rtlreg_t* dest) {
 }
 
 static inline void rtl_eq0(rtlreg_t* dest, const rtlreg_t* src1) {
-  // dest <- (src1 == 0 ? 1 : 0)
-  TODO();
+  // Check if src1 is equal to 0, store 1 in dest if true, else 0
+  *dest = (*src1 == 0 ? 1 : 0);
 }
 
 static inline void rtl_eqi(rtlreg_t* dest, const rtlreg_t* src1, int imm) {
-  // dest <- (src1 == imm ? 1 : 0)
-  TODO();
+  // Check if src1 is equal to the immediate value imm, store 1 in dest if true, else 0
+  *dest = (*src1 == imm ? 1 : 0);
 }
 
 static inline void rtl_neq0(rtlreg_t* dest, const rtlreg_t* src1) {
-  // dest <- (src1 != 0 ? 1 : 0)
-  TODO();
+  // Check if src1 is not equal to 0, store 1 in dest if true, else 0
+  *dest = (*src1 != 0 ? 1 : 0);
 }
 
 static inline void rtl_msb(rtlreg_t* dest, const rtlreg_t* src1, int width) {
