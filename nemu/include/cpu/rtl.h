@@ -130,8 +130,7 @@ static inline void rtl_mv(rtlreg_t* dest, const rtlreg_t *src1) {
 }
 
 static inline void rtl_not(rtlreg_t* dest) {
-  // dest <- ~dest
-  TODO();
+    *dest = ~(*dest);
 }
 
 static inline void rtl_sext(rtlreg_t* dest, const rtlreg_t* src1, int width) {
@@ -169,8 +168,10 @@ static inline void rtl_neq0(rtlreg_t* dest, const rtlreg_t* src1) {
 }
 
 static inline void rtl_msb(rtlreg_t* dest, const rtlreg_t* src1, int width) {
-  // dest <- src1[width * 8 - 1]
-  TODO();
+  // Extract the most significant bit (MSB) based on the specified width in bytes
+  // Multiply width by 8 to get total bits, subtract 1 to get the shift amount
+  // Mask with 0x1 to isolate the single MSB
+  *dest = (*src1 >> (width * 8 - 1)) & 0x1;
 }
 
 static inline void rtl_update_ZF(const rtlreg_t* result, int width) {
