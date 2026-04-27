@@ -16,6 +16,7 @@ make_EHelper(jcc) {
   print_asm("j%s %x", get_cc_name(subcode), decoding.jmp_eip);
 }
 
+
 make_EHelper(jmp_rm) {
   decoding.jmp_eip = id_dest->val;
   decoding.is_jmp = 1;
