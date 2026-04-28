@@ -57,12 +57,21 @@ make_EHelper(xor) {
   // 5. Print assembly log
   print_asm_template2(xor);
 }
-
 make_EHelper(or) {
-  TODO();
+  // 1. Perform bitwise OR operation
+  rtl_or(&t2, &id_dest->val, &id_src->val);
+  operand_write(id_dest, &t2);
+
+  // 2. Update EFLAGS (ZF, SF)
+  rtl_update_ZFSF(&t2, id_dest->width);
+  // 3. CF and OF are cleared for OR
+  rtl_li(&t0, 0);
+  rtl_set_CF(&t0);
+  rtl_set_OF(&t0);
 
   print_asm_template2(or);
 }
+
 
 make_EHelper(shl) {
   // 1. Perform Shift Left (Logical and Arithmetic left shift are identical in x86)
