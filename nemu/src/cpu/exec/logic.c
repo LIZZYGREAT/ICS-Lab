@@ -64,25 +64,45 @@ make_EHelper(or) {
   print_asm_template2(or);
 }
 
-make_EHelper(sar) {
-  TODO();
-  // unnecessary to update CF and OF in NEMU
-
-  print_asm_template2(sar);
-}
-
 make_EHelper(shl) {
-  TODO();
-  // unnecessary to update CF and OF in NEMU
+  // 1. Perform Shift Left (Logical and Arithmetic left shift are identical in x86)
+  rtl_shl(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write the result back to destination
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS (ZF, SF)
+  rtl_update_ZFSF(&t0, id_dest->width);
+  // Note: CF update is omitted here as basic cputests usually don't strictly require 
+  // complex shift CF tracking, but keep it in mind if CF assertions fail later.
 
   print_asm_template2(shl);
 }
 
 make_EHelper(shr) {
-  TODO();
-  // unnecessary to update CF and OF in NEMU
+  // 1. Perform Shift Logical Right (pads with 0)
+  rtl_shr(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write back
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS (ZF, SF)
+  rtl_update_ZFSF(&t0, id_dest->width);
 
   print_asm_template2(shr);
+}
+
+make_EHelper(sar) {
+  // 1. Perform Shift Arithmetic Right (preserves sign bit)
+  rtl_sar(&t0, &id_dest->val, &id_src->val);
+  
+  // 2. Write back
+  operand_write(id_dest, &t0);
+
+  // 3. Update EFLAGS (ZF, SF)
+  rtl_update_ZFSF(&t0, id_dest->width);
+
+  print_asm_template2(sar);
 }
 
 make_EHelper(setcc) {
