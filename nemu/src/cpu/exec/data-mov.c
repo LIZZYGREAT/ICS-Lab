@@ -48,13 +48,31 @@ make_EHelper(leave) {
 
 make_EHelper(cltd) {
   if (decoding.is_operand_size_16) {
-    TODO();
-  }
-  else {
-    TODO();
+    // 16-bit mode: CWD (Convert Word to Doubleword)
+    // Sign-extend AX into DX
+    rtl_lr(&t0, R_EAX, 2);
+    
+    // Shift left by 16 to move the 16th bit to the MSB, 
+    // then arithmetic shift right by 31 to broadcast the sign bit.
+    // If AX is negative, t0 becomes 0xFFFFFFFF. If positive, t0 becomes 0.
+    rtl_shli(&t0, &t0, 16);
+    rtl_sari(&t0, &t0, 31);
+    
+    // Write the lower 16 bits of the mask to DX
+    rtl_sr(R_EDX, 2, &t0);
+  } else {
+    // 32-bit mode: CDQ (Convert Doubleword to Quadword)
+    // Sign-extend EAX into EDX
+    rtl_lr(&t0, R_EAX, 4);
+    
+    // Directly arithmetic shift right by 31 to broadcast the 32nd bit.
+    rtl_sari(&t0, &t0, 31);
+    
+    // Write the 32-bit mask to EDX
+    rtl_sr(R_EDX, 4, &t0);
   }
 
-  print_asm(decoding.is_operand_size_16 ? "cwtl" : "cltd");
+  print_asm_template1(cltd);
 }
 
 make_EHelper(cwtl) {
