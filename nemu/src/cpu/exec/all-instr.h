@@ -4,6 +4,11 @@ make_EHelper(operand_size);
 
 make_EHelper(nop);
 
+make_EHelper(idiv);
+make_EHelper(neg);
+make_EHelper(mul);
+make_EHelper(imul1);
+make_EHelper(div);
 make_EHelper(inv);
 make_EHelper(sub);
 make_EHelper(add);
@@ -24,6 +29,7 @@ make_EHelper(pop);
 make_EHelper(lea);
 make_EHelper(leave);
 
+make_EHelper(not);
 make_EHelper(xor);
 make_EHelper(and);
 make_EHelper(cmp);

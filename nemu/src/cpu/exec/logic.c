@@ -123,7 +123,12 @@ make_EHelper(setcc) {
 }
 
 make_EHelper(not) {
-  TODO();
+  // 1. Perform bitwise NOT operation on the destination value
+  rtl_not(&id_dest->val);
 
+  // 2. Write the inverted result back to the destination
+  operand_write(id_dest, &id_dest->val);
+
+  // Note: The NOT instruction does NOT affect any EFLAGS.
   print_asm_template1(not);
 }
