@@ -35,11 +35,11 @@ void diff_test_skip_nemu() { is_skip_nemu = true; }
 
 static uint8_t mbr[] = {
   // start16:
-  0xfa,                           // cli
-  0x31, 0xc0,                     // xorw   %ax,%ax
-  0x8e, 0xd8,                     // movw   %ax,%ds
-  0x8e, 0xc0,                     // movw   %ax,%es
-  0x8e, 0xd0,                     // movw   %ax,%ss
+  0xfa,                   // cli
+  0x31, 0xc0,       // xorw   %ax,%ax
+  0x8e, 0xd8,       // movw   %ax,%ds
+  0x8e, 0xc0,       // movw   %ax,%es
+  0x8e, 0xd0,       // movw   %ax,%ss
   0x0f, 0x01, 0x16, 0x44, 0x7c,   // lgdt   gdtdesc
   0x0f, 0x20, 0xc0,               // movl   %cr0,%eax
   0x66, 0x83, 0xc8, 0x01,         // orl    $CR0_PE,%eax
@@ -147,9 +147,53 @@ void difftest_step(uint32_t eip) {
   gdb_si();
   gdb_getregs(&r);
 
-  // TODO: Check the registers state with QEMU.
+  // Check the registers state with QEMU.
   // Set `diff` as `true` if they are not the same.
-  TODO();
+  if (r.eax != cpu.eax) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("eax is different: qemu = 0x%08x, nemu = 0x%08x\n", r.eax, cpu.eax);
+      diff = true;
+  }
+  if (r.ecx != cpu.ecx) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("ecx is different: qemu = 0x%08x, nemu = 0x%08x\n", r.ecx, cpu.ecx);
+      diff = true;
+  }
+  if (r.edx != cpu.edx) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("edx is different: qemu = 0x%08x, nemu = 0x%08x\n", r.edx, cpu.edx);
+      diff = true;
+  }
+  if (r.ebx != cpu.ebx) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("ebx is different: qemu = 0x%08x, nemu = 0x%08x\n", r.ebx, cpu.ebx);
+      diff = true;
+  }
+  if (r.esp != cpu.esp) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("esp is different: qemu = 0x%08x, nemu = 0x%08x\n", r.esp, cpu.esp);
+      diff = true;
+  }
+  if (r.ebp != cpu.ebp) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("ebp is different: qemu = 0x%08x, nemu = 0x%08x\n", r.ebp, cpu.ebp);
+      diff = true;
+  }
+  if (r.esi != cpu.esi) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("esi is different: qemu = 0x%08x, nemu = 0x%08x\n", r.esi, cpu.esi);
+      diff = true;
+  }
+  if (r.edi != cpu.edi) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("edi is different: qemu = 0x%08x, nemu = 0x%08x\n", r.edi, cpu.edi);
+      diff = true;
+  }
+  if (r.eip != cpu.eip) {
+      printf("difftest fail at eip = 0x%08x\n", eip);
+      printf("eip is different: qemu = 0x%08x, nemu = 0x%08x\n", r.eip, cpu.eip);
+      diff = true;
+  }
 
   if (diff) {
     nemu_state = NEMU_END;
