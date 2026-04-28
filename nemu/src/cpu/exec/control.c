@@ -43,7 +43,14 @@ make_EHelper(ret) {
 }
 
 make_EHelper(call_rm) {
-  TODO();
+  // 1. Push the return address (next instruction's EIP) onto the stack
+  rtl_push(&decoding.seq_eip);
 
-  print_asm("call *%s", id_dest->str);
+  // 2. Set the target EIP to the absolute address read from the operand
+  decoding.jmp_eip = id_dest->val;
+  decoding.is_jmp = 1;
+
+  print_asm_template1(call);
 }
+
+
