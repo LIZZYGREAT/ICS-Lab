@@ -122,8 +122,25 @@ make_EHelper(dec) {
   print_asm_template1(dec);
 }
 
+
 make_EHelper(neg) {
-  TODO();
+  // 1. CF is set to 0 if the operand is 0, otherwise set to 1.
+  rtl_neq0(&t1, &id_dest->val);
+  rtl_set_CF(&t1);
+
+  // 2. Perform two's complement negation: 0 - dest
+  rtl_li(&t0, 0);
+  rtl_sub(&t2, &t0, &id_dest->val);
+  operand_write(id_dest, &t2);
+
+  // 3. Update EFLAGS (ZF, SF) based on the result
+  rtl_update_ZFSF(&t2, id_dest->width);
+
+  // 4. OF is set to 1 only if the original operand is the most negative number
+  // (e.g., 0x80000000 for 32-bit). Otherwise, it is cleared to 0.
+  rtl_xori(&t0, &id_dest->val, 1u << (id_dest->width * 8 - 1));
+  rtl_eq0(&t0, &t0);
+  rtl_set_OF(&t0);
 
   print_asm_template1(neg);
 }
