@@ -113,7 +113,32 @@ make_EHelper(sar) {
 
   print_asm_template2(sar);
 }
+make_EHelper(rol) {
+  /* According to i386 manual, shift count is masked to standard 5 bits */
+  int count = id_src->val & 0x1f;
 
+  if (count != 0) {
+    uint32_t val = id_dest->val;
+    int bits = id_dest->width * 8;
+
+    /* Rotating by total bit width results in the identical original value */
+    count %= bits;
+    if (count != 0) {
+      val = (val << count) | (val >> (bits - count));
+    }
+
+    /* Ensure strict data masking based on destination operand size */
+    if (id_dest->width == 1) {
+      val &= 0xff;
+    } else if (id_dest->width == 2) {
+      val &= 0xffff;
+    }
+
+    operand_write(id_dest, &val);
+  }
+
+  print_asm_template2(rol);
+}
 make_EHelper(setcc) {
   uint8_t subcode = decoding.opcode & 0xf;
   rtl_setcc(&t2, subcode);
