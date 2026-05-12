@@ -54,10 +54,10 @@ make_group(gp3,
     EX(mul), EX(imul1), EX(div), EX(idiv))
   /* 0xfe */
 make_group(gp4,
-    EMPTY, EMPTY, EMPTY, EMPTY,
+    EX(inc), EX(dec), EMPTY, EMPTY,
     EMPTY, EMPTY, EMPTY, EMPTY)
-
-// 0xff: Group 5 instructions
+    
+    // 0xff: Group 5 instructions
 make_group(gp5,
     EX(inc), EX(dec), EX(call_rm), EMPTY,
     EX(jmp_rm), EMPTY, EX(push), EMPTY)
