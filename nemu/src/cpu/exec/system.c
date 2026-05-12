@@ -45,7 +45,16 @@ uint32_t pio_read(ioaddr_t, int);
 void pio_write(ioaddr_t, int, uint32_t);
 
 make_EHelper(in) {
-  TODO();
+  /* Port address is implicitly stored in the %dx register */
+  ioaddr_t port = reg_w(R_DX);
+
+  /* Read data from the specified I/O port based on instruction width */
+  t0 = pio_read(port, id_dest->width);
+
+  /* Configure the destination operand to implicitly target %al/%ax/%eax */
+  id_dest->type = OP_TYPE_REG;
+  id_dest->reg  = R_EAX;
+  operand_write(id_dest, &t0);
 
   print_asm_template2(in);
 
@@ -55,7 +64,11 @@ make_EHelper(in) {
 }
 
 make_EHelper(out) {
-  TODO();
+  /* Port address is implicitly stored in the %dx register */
+  ioaddr_t port = reg_w(R_DX);
+
+  /* Write data to the specified physical I/O port bus */
+  pio_write(port, id_src->width, id_src->val);
 
   print_asm_template2(out);
 
