@@ -1,5 +1,6 @@
 #include "cpu/exec.h"
-
+make_EHelper(cltd);
+make_EHelper(cwtl);
 make_EHelper(operand_size);
 
 make_EHelper(nop);

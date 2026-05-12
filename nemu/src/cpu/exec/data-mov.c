@@ -77,10 +77,11 @@ make_EHelper(cltd) {
 
 make_EHelper(cwtl) {
   if (decoding.is_operand_size_16) {
-    TODO();
-  }
-  else {
-    TODO();
+    /* Sign extend AL to AX */
+    reg_w(R_AX) = (int16_t)(int8_t)reg_b(R_AL);
+  } else {
+    /* Sign extend AX to EAX */
+    reg_l(R_EAX) = (int32_t)(int16_t)reg_w(R_AX);
   }
 
   print_asm(decoding.is_operand_size_16 ? "cbtw" : "cwtl");
