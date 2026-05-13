@@ -29,7 +29,7 @@ void rtl_setcc(rtlreg_t* dest, uint8_t subcode);
   inline void concat(rtl_, name) (rtlreg_t* dest, const rtlreg_t* src1, const rtlreg_t* src2) { \
     *dest = concat(c_, name) (*src1, *src2); \
   } \
-  static inline void concat3(rtl_, name, i) (rtlreg_t* dest, const rtlreg_t* src1, int imm) { \
+  inline void concat3(rtl_, name, i) (rtlreg_t* dest, const rtlreg_t* src1, int imm) { \
     *dest = concat(c_, name) (*src1, imm); \
   }
 
