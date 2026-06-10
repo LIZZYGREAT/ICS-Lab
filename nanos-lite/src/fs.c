@@ -50,24 +50,26 @@ int fs_open(const char *pathname, int flags, int mode) {
 
 // 2. Read from file with boundary check
 size_t fs_read(int fd, void *buf, size_t len) {
-  if (fd == FD_EVENTS) {
-    return events_read(buf, 0, len);
+  if (fd < 0 || fd >= NR_FILES) {
+    Log("ERROR: Invalid fd %d in fs_read", fd);
+    return 0;
   }
+
+  if (fd == FD_EVENTS) return events_read(buf, 0, len);
   
   Finfo *file = &file_table[fd];
-  
   if (fd == FD_DISPINFO) {
     size_t read_len = dispinfo_read(buf, file->open_offset, len);
     file->open_offset += read_len;
     return read_len;
   }
 
-  if (file->open_offset + len > file->size) {
-    len = file->size - file->open_offset;
+  if (file->open_offset >= file->size) {
+    return 0; 
   }
 
-  if (len == 0) {
-    return 0;
+  if (file->open_offset + len > file->size) {
+    len = file->size - file->open_offset;
   }
 
   ramdisk_read(buf, file->disk_offset + file->open_offset, len);
