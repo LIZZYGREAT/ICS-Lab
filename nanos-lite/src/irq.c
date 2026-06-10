@@ -3,19 +3,19 @@
 // Declare the external system call handler
 extern void do_syscall(_RegSet *r);
 
-static _RegSet* do_event(_Event e, _RegSet* r) {
+_RegSet* do_event(_Event e, _RegSet* r) {
+  Log("Inside do_event: event ID = %d, context r = %p", e.event, r);
+
   switch (e.event) {
     case _EVENT_SYSCALL:
-      // Dispatch the context pointer to the system call handler
-      do_syscall(r);
+      do_syscall(r); 
       break;
-    case _EVENT_TRAP:
-      break;
-    default: panic("Unhandled event ID = %d", e.event);
+    default: 
+      panic("Unhandled event ID = %d", e.event);
   }
 
-  // Return NULL means we just resume the current execution context
-  return NULL;
+  Log("Leaving do_event: returning r = %p", r);
+  return r;
 }
 
 void init_irq(void) {
