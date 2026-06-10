@@ -1,4 +1,10 @@
 #include "cpu/exec.h"
+
+
+make_EHelper(int);
+make_EHelper(pusha);
+make_EHelper(lidt);
+
 make_EHelper(cltd);
 make_EHelper(cwtl);
 make_EHelper(operand_size);

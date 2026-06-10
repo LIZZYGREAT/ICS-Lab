@@ -3,8 +3,15 @@
 void diff_test_skip_qemu();
 void diff_test_skip_nemu();
 
+
+extern void raise_intr(uint8_t NO, vaddr_t ret_addr);
+
 make_EHelper(lidt) {
-  TODO();
+  // Read 2 bytes of limit from the target memory address
+  cpu.idtr.limit = vaddr_read(id_dest->addr, 2);
+  
+  // Read 4 bytes of base address starting from target address + 2
+  cpu.idtr.base = vaddr_read(id_dest->addr + 2, 4);
 
   print_asm_template1(lidt);
 }
@@ -25,15 +32,20 @@ make_EHelper(mov_cr2r) {
 #endif
 }
 
+
 make_EHelper(int) {
-  TODO();
+  // Extract the exception number from the instruction operand
+  uint8_t NO = id_dest->val & 0xff;
+  
+  // Call hardware interrupt handling function with sequence EIP as return address
+  raise_intr(NO, decoding.seq_eip);
 
   print_asm("int %s", id_dest->str);
-
 #ifdef DIFF_TEST
-  diff_test_skip_nemu();
+    diff_test_skip_nemu();
 #endif
 }
+
 
 make_EHelper(iret) {
   TODO();

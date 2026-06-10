@@ -8,6 +8,7 @@ enum {
   SYS_write,
   SYS_exit,
   SYS_kill,
+  SYS_yield,
   SYS_getpid,
   SYS_close,
   SYS_lseek,

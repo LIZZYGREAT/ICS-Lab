@@ -24,8 +24,21 @@ make_EHelper(pop) {
   print_asm_template1(pop);
 }
 
+// nemu/src/cpu/exec/data-mov.c
+
 make_EHelper(pusha) {
-  TODO();
+  // Save current ESP to a temporary variable before consecutive pushes
+  rtlreg_t temp_esp = cpu.esp;
+  
+  // Push all general purpose registers in strict sequence
+  rtl_push(&cpu.eax);
+  rtl_push(&cpu.ecx);
+  rtl_push(&cpu.edx);
+  rtl_push(&cpu.ebx);
+  rtl_push(&temp_esp);
+  rtl_push(&cpu.ebp);
+  rtl_push(&cpu.esi);
+  rtl_push(&cpu.edi);
 
   print_asm("pusha");
 }
