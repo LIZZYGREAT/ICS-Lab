@@ -15,7 +15,7 @@ _RegSet* do_event(_Event e, _RegSet* r) {
   }
 
   Log("Leaving do_event: returning r = %p", r);
-  return r;
+  return NULL;
 }
 
 void init_irq(void) {
