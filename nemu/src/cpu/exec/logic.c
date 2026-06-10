@@ -8,15 +8,40 @@ make_EHelper(test) {
   rtl_update_ZF(&t0, id_dest->width);
   rtl_update_SF(&t0, id_dest->width);
 
-  // 3. Clear CF and OF as per i386 manual for TEST instruction
+  // 3. Clear CF and OF 
   rtl_li(&t1, 0);
   rtl_set_CF(&t1);
   rtl_set_OF(&t1);
 
-  // Note: TEST instruction strictly DISCARDS the result.
-  // There MUST NOT be any operand_write() call here.
-
   print_asm_template2(test);
+}
+
+make_EHelper(bsr) {
+  rtlreg_t val = id_src->val;
+  int width = id_src->width;
+  int bits = width * 8;
+  int i;
+  rtlreg_t found = 0;
+
+  for (i = bits - 1; i >= 0; i--) {
+    if ((val >> i) & 1) {
+      found = 1;
+      break;
+    }
+  }
+
+  if (found) {
+    rtl_li(&t0, i);
+    operand_write(id_dest, &t0);
+
+    rtl_li(&t1, 1);
+    rtl_update_ZF(&t1, 4);
+  } else {
+    rtl_li(&t1, 0);
+    rtl_update_ZF(&t1, 4);
+  }
+
+  print_asm_template2(bsr);
 }
 
 make_EHelper(and) {
