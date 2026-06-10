@@ -3,12 +3,11 @@
 
 void raise_intr(uint8_t NO, vaddr_t ret_addr) {
   // 1. Push EFLAGS, CS, and EIP into the stack
-  // Note: Depending on your reg.h definition, cpu.eflags might be a union or uint32_t.
-  // If cpu.eflags causes a compilation error, try cpu.eflags.val
   rtlreg_t eflags = cpu.eflags.value;
   rtl_push(&eflags);
   
-  // CS is theoretically 16-bit, but we push it as 32-bit in this architecture
+  cpu.eflags.IF = 0;  
+  
   rtlreg_t cs = cpu.cs; 
   rtl_push(&cs);
   

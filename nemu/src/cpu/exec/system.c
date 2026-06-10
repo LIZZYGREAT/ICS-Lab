@@ -46,20 +46,16 @@ make_EHelper(mov_cr2r) {
 #endif
 }
 
-
 make_EHelper(int) {
-  // Extract the exception number from the instruction operand
-  uint8_t NO = id_dest->val & 0xff;
+  uint8_t NO = id_src->val & 0xff;
   
-  // Call hardware interrupt handling function with sequence EIP as return address
   raise_intr(NO, decoding.seq_eip);
 
-  print_asm("int %s", id_dest->str);
+  print_asm("int %s", id_src->str);
 #ifdef DIFF_TEST
     diff_test_skip_nemu();
 #endif
 }
-
 
 make_EHelper(iret) {
   rtl_pop(&decoding.jmp_eip);
