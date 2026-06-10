@@ -15,9 +15,6 @@ _RegSet* do_syscall(_RegSet *r) {
 
   switch (a[0]) {
     case SYS_yield:
-      // Call AM's yield interface to perform a hardware yield
-      _yield();
-      // Write the return value (0 for success) back to the trap frame's eax
       r->eax = 0;
       break;
 
