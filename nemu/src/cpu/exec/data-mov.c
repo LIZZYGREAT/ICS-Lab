@@ -129,7 +129,7 @@ make_EHelper(lea) {
   print_asm_template2(lea);
 }
 
-
+/*
 make_EHelper(movsb) {
   // Read 1 byte from the address pointed by ESI
   uint32_t val = vaddr_read(cpu.esi, 1);
@@ -156,4 +156,26 @@ make_EHelper(movsd) {
   cpu.edi += inc_dec;
 
   print_asm("movsd");
+}*/
+
+
+make_EHelper(movsb) {
+  uint32_t val = vaddr_read(cpu.esi, 1);
+  vaddr_write(cpu.edi, val, 1);
+
+  cpu.esi += 1;
+  cpu.edi += 1;
+
+  print_asm("movsb");
+}
+
+make_EHelper(movs) {
+  int width = decoding.is_operand_size_16 ? 2 : 4;
+  uint32_t val = vaddr_read(cpu.esi, width);
+  vaddr_write(cpu.edi, val, width);
+
+  cpu.esi += width;
+  cpu.edi += width;
+
+  print_asm("movs");
 }
