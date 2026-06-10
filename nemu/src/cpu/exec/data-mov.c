@@ -24,7 +24,6 @@ make_EHelper(pop) {
   print_asm_template1(pop);
 }
 
-
 make_EHelper(pusha) {
   // Save current ESP to a temporary variable before consecutive pushes
   rtlreg_t temp_esp = cpu.esp;
