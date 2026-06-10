@@ -38,7 +38,7 @@ typedef struct {
             uint32_t SF : 1;  // Bit 7: Sign Flag
             uint32_t    : 1;  // Bit 8: Don't care
             uint32_t IF : 1;  // Bit 9: Interrupt Enable Flag
-            uint32_t    : 1;  // Bit 10: Don't care
+            uint32_t DF : 1;  // Bit 10: Direction Flag
             uint32_t OF : 1;  // Bit 11: Overflow Flag
             uint32_t    : 20; // Bits 12-31: Don't care
         };

@@ -128,3 +128,32 @@ make_EHelper(lea) {
   operand_write(id_dest, &t2);
   print_asm_template2(lea);
 }
+
+
+make_EHelper(movsb) {
+  // Read 1 byte from the address pointed by ESI
+  uint32_t val = vaddr_read(cpu.esi, 1);
+  // Write this 1 byte to the address pointed by EDI
+  vaddr_write(cpu.edi, val, 1);
+
+  // Check Direction Flag (DF) in EFLAGS to decide increment or decrement
+  int inc_dec = (cpu.eflags.DF == 0) ? 1 : -1;
+  cpu.esi += inc_dec;
+  cpu.edi += inc_dec;
+
+  print_asm("movsb");
+}
+
+make_EHelper(movsd) {
+  // Read 4 bytes (Double Word) from the address pointed by ESI
+  uint32_t val = vaddr_read(cpu.esi, 4);
+  // Write these 4 bytes to the address pointed by EDI
+  vaddr_write(cpu.edi, val, 4);
+
+  // 4 bytes transfer means pointers move by 4
+  int inc_dec = (cpu.eflags.DF == 0) ? 4 : -4;
+  cpu.esi += inc_dec;
+  cpu.edi += inc_dec;
+
+  print_asm("movsd");
+}
