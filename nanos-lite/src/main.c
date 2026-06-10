@@ -31,16 +31,6 @@ int main() {
   init_fs();
 
   uint32_t entry = loader(NULL, "/bin/bmptest");
-  asm volatile(
-    "movl %0, %%eax;"       
-    "movl $0x7ffff000, %%esp;"  
-    "pushl $0;"
-    "pushl $0;" 
-    "pushl $0;"  
-    "jmp *%%eax;" 
-    :
-    : "r"(entry)
-    : "eax"        
-  );
+  ((void (*)(void))entry)();
   panic("Should not reach here");
 }
