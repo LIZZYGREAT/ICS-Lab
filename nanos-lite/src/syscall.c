@@ -14,8 +14,11 @@ _RegSet* do_syscall(_RegSet *r) {
   a[3] = SYSCALL_ARG4(r);
 
   switch (a[0]) {
+    case SYS_none:
+      r->eax = 1; 
+      break;
     case SYS_yield:
-      r->eax = 0;
+        r->eax = 0;
       break;
 
     case SYS_exit:
