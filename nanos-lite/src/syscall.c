@@ -1,9 +1,7 @@
 #include "common.h"
 #include "syscall.h"
 
-extern void _yield(); 
 
-// Declare VFS interfaces
 extern int fs_open(const char *pathname, int flags, int mode);
 extern size_t fs_read(int fd, void *buf, size_t len);
 extern size_t fs_write(int fd, const void *buf, size_t len);
@@ -50,6 +48,10 @@ _RegSet* do_syscall(_RegSet *r) {
 
     case SYS_close:
       r->eax = fs_close((int)a[1]);
+      break;
+
+    case SYS_none:
+      r->eax = 1;
       break;
 
     default:
