@@ -24,7 +24,6 @@ make_EHelper(pop) {
   print_asm_template1(pop);
 }
 
-// nemu/src/cpu/exec/data-mov.c
 
 make_EHelper(pusha) {
   // Save current ESP to a temporary variable before consecutive pushes
@@ -44,7 +43,14 @@ make_EHelper(pusha) {
 }
 
 make_EHelper(popa) {
-  TODO();
+  rtl_pop(&cpu.edi);
+  rtl_pop(&cpu.esi);
+  rtl_pop(&cpu.ebp);
+  rtl_pop(&t0);
+  rtl_pop(&cpu.ebx);
+  rtl_pop(&cpu.edx);
+  rtl_pop(&cpu.ecx);
+  rtl_pop(&cpu.eax);
 
   print_asm("popa");
 }

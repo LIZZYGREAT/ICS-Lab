@@ -9,6 +9,8 @@ make_EHelper(lidt);
 make_EHelper(cli);
 make_EHelper(sti);
 
+make_EHelper(popa);
+make_EHelper(iret);
 
 make_EHelper(cltd);
 make_EHelper(cwtl);

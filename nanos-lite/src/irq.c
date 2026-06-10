@@ -9,7 +9,8 @@ static _RegSet* do_event(_Event e, _RegSet* r) {
       // Dispatch the context pointer to the system call handler
       do_syscall(r);
       break;
-
+    case _EVENT_TRAP:
+      break;
     default: panic("Unhandled event ID = %d", e.event);
   }
 
