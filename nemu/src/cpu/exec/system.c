@@ -88,3 +88,15 @@ make_EHelper(out) {
   diff_test_skip_qemu();
 #endif
 }
+
+make_EHelper(cli) {
+  // Clear the Interrupt Flag (Disable interrupts)
+  cpu.eflags.IF = 0;
+  print_asm("cli");
+}
+
+make_EHelper(sti) {
+  // Set the Interrupt Flag (Enable interrupts)
+  cpu.eflags.IF = 1;
+  print_asm("sti");
+}
