@@ -63,7 +63,7 @@ make_group(gp5,
     
     /* 0x0f 0x01*/
 make_group(Group7,
-  EMPTY, EMPTY, EMPTY, IDEX(E, lidt),
+  EMPTY, EMPTY, EMPTY, EX(lidt),
   EMPTY, EMPTY, EMPTY, EMPTY
 );
 
