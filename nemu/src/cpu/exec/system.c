@@ -17,13 +17,27 @@ make_EHelper(lidt) {
 }
 
 make_EHelper(mov_r2cr) {
-  TODO();
+  if (id_dest->reg == 0) {
+    cpu.cr0.val = id_src->val;
+  } else if (id_dest->reg == 3) {
+    cpu.cr3.val = id_src->val;
+  } else {
+    Assert(0, "Unsupported control register: cr%d", id_dest->reg);
+  }
 
   print_asm("movl %%%s,%%cr%d", reg_name(id_src->reg, 4), id_dest->reg);
 }
 
 make_EHelper(mov_cr2r) {
-  TODO();
+  if (id_src->reg == 0) {
+    t0 = cpu.cr0.val;
+  } else if (id_src->reg == 3) {
+    t0 = cpu.cr3.val;
+  } else {
+    Assert(0, "Unsupported control register: cr%d", id_src->reg);
+  }
+
+  operand_write(id_dest, &t0);
 
   print_asm("movl %%cr%d,%%%s", id_src->reg, reg_name(id_dest->reg, 4));
 
@@ -82,11 +96,9 @@ make_EHelper(in) {
 }
 
 make_EHelper(out) {
-  /* Port address is implicitly stored in the %dx register */
   ioaddr_t port = reg_w(R_DX);
 
-  /* Write data to the specified physical I/O port bus */
-  pio_write(port, id_src->width, id_src->val);
+  pio_write(port, id_dest->width, reg_l(R_EAX));
 
   print_asm_template2(out);
 
@@ -94,6 +106,7 @@ make_EHelper(out) {
   diff_test_skip_qemu();
 #endif
 }
+
 
 make_EHelper(cli) {
   // Clear the Interrupt Flag (Disable interrupts)

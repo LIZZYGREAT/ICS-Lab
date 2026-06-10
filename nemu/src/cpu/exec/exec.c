@@ -63,9 +63,10 @@ make_group(gp5,
     
     /* 0x0f 0x01*/
 make_group(Group7,
-  EMPTY, EMPTY, EMPTY, EX(lidt),
+  EMPTY, EMPTY, EMPTY, IDEX(E, lidt),
   EMPTY, EMPTY, EMPTY, EMPTY
 );
+
 
 opcode_entry opcode_table [512] = {
   /* 0x00 */	IDEXW(G2E, add, 1), IDEX(G2E, add), IDEXW(E2G, add, 1), IDEX(E2G, add),
@@ -143,7 +144,7 @@ opcode_entry opcode_table [512] = {
   /* 0x14 */	EMPTY, EMPTY, EMPTY, EMPTY,
   /* 0x18 */	EMPTY, EMPTY, EMPTY, EMPTY,
   /* 0x1c */	EMPTY, EMPTY, EMPTY, EMPTY,
-  /* 0x20 */	EMPTY, EMPTY, EMPTY, EMPTY,
+  /* 0x20 */	IDEX(E2G, mov_cr2r), EMPTY, IDEX(G2E, mov_r2cr), EMPTY,
   /* 0x24 */	EMPTY, EMPTY, EMPTY, EMPTY,
   /* 0x28 */	EMPTY, EMPTY, EMPTY, EMPTY,
   /* 0x2c */	EMPTY, EMPTY, EMPTY, EMPTY,
