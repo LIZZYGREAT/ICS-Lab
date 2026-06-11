@@ -1,6 +1,5 @@
 #include "common.h"
 
-
 #define NAME(key) \
   [_KEY_##key] = #key,
 
@@ -35,40 +34,35 @@ size_t events_read(void *buf, off_t offset, size_t len) {
   }
 }
 
-static char dispinfo[128] __attribute__((used)) = {};
+
+#define SCREEN_W 400
+#define SCREEN_H 300
+
+char dispinfo[128];
+
+void init_device() {
+    _ioe_init();
+
+    sprintf(dispinfo, "WIDTH:%d\nHEIGHT:%d\n", SCREEN_W, SCREEN_H);
+}
 
 size_t dispinfo_read(void *buf, off_t offset, size_t len) {
-  int dispinfo_len = strlen(dispinfo);
-  if (offset >= dispinfo_len) return 0;
-  
-  size_t read_len = (offset + len > dispinfo_len) ? (dispinfo_len - offset) : len;
-  memcpy(buf, dispinfo + offset, read_len);
-  return read_len;
+    size_t max_len = strlen(dispinfo);
+    if (offset >= max_len) return 0;
+    if (offset + len > max_len) {
+        len = max_len - offset;
+    }
+    memcpy(buf, dispinfo + offset, len);
+    return len;
 }
 
 size_t fb_write(const void *buf, off_t offset, size_t len) {
-  int pixels_left = len / 4;
-  off_t cur_offset = offset;
-  const uint32_t *pixel_ptr = (const uint32_t *)buf;
-
-  while (pixels_left > 0) {
-    int x = (cur_offset / 4) % _screen.width;
-    int y = (cur_offset / 4) / _screen.width;
+    int pixel_offset = offset / 4;
     
-    int available_w = _screen.width - x;
-    int chunk_w = (pixels_left < available_w) ? pixels_left : available_w;
-
-    _draw_rect(pixel_ptr, x, y, chunk_w, 1);
-
-    pixels_left -= chunk_w;
-    cur_offset += chunk_w * 4;
-    pixel_ptr += chunk_w;
-  }
-  return len;
-}
-
-void init_device() {
-  _ioe_init();
-
-  sprintf(dispinfo, "WIDTH:%d\nHEIGHT:%d\n", _screen.width, _screen.height);
+    int x = pixel_offset % SCREEN_W;
+    int y = pixel_offset / SCREEN_W;
+    
+    _draw_rect((const uint32_t *)buf, x, y, len / 4, 1);
+    
+    return len;
 }

@@ -27,88 +27,75 @@ static Finfo file_table[] __attribute__((used)) = {
 #include "files.h"
 };
 
+
 #define NR_FILES (sizeof(file_table) / sizeof(file_table[0]))
 
-void init_fs(){
-  file_table[FD_FB].size = _screen.width * _screen.height * 4;
+void init_fs() {
+    for (int i = 0; i < NR_FILES; i++) {
+        if (strcmp(file_table[i].name, "/dev/fb") == 0) {
+            file_table[i].size = 400 * 300 * 4; 
+            break;
+        }
+    }
 }
 
-// 1. Open file and reset its offset
 int fs_open(const char *pathname, int flags, int mode) {
-  for (int i = 0; i < NR_FILES; i++) {
-    // Match the filename
-    if (strcmp(file_table[i].name, pathname) == 0) {
-      // Initialize the read/write offset to 0 upon successfully opening the file
-      file_table[i].open_offset = 0;
-      return i; // Return the index as the file descriptor (fd)
+    for (int i = 0; i < NR_FILES; i++) {
+        if (strcmp(file_table[i].name, pathname) == 0) {
+            file_table[i].open_offset = 0; 
+            return i;                     
+        }
     }
-  }
-  // If the file is not found, panic or assert
-  assert(0);
-  return -1;
+    panic("File not found in file_table: %s", pathname);
+    return -1;
 }
 
-// 2. Read from file with boundary check
-size_t fs_read(int fd, void *buf, size_t len) {
-  if (fd < 0 || fd >= NR_FILES) {
-    Log("ERROR: Invalid fd %d in fs_read", fd);
-    return 0;
-  }
+ssize_t fs_read(int fd, void *buf, size_t len) {
+    Finfo *f = &file_table[fd];
+    ssize_t real_len = len;
 
-  if (fd == FD_EVENTS) return events_read(buf, 0, len);
-  
-  Finfo *file = &file_table[fd];
-  if (fd == FD_DISPINFO) {
-    size_t read_len = dispinfo_read(buf, file->open_offset, len);
-    file->open_offset += read_len;
-    return read_len;
-  }
+    if (strcmp(f->name, "/proc/dispinfo") == 0) {
+        real_len = dispinfo_read(buf, f->open_offset, len);
+        f->open_offset += real_len;
+        return real_len;
+    }
 
-  if (file->open_offset >= file->size) {
-    return 0; 
-  }
+    if (f->open_offset + len > f->size) {
+        real_len = f->size - f->open_offset;
+    }
+    if (real_len <= 0) return 0;
 
-  if (file->open_offset + len > file->size) {
-    len = file->size - file->open_offset;
-  }
-
-  ramdisk_read(buf, file->disk_offset + file->open_offset, len);
-  file->open_offset += len;
-  return len;
+    ramdisk_read(buf, f->disk_offset + f->open_offset, real_len);
+    f->open_offset += real_len;
+    return real_len;
 }
 
-// 3. Write to file or terminal
-size_t fs_write(int fd, const void *buf, size_t len) {
-  // Route to terminal if fd indicates standard output or standard error
-  if (fd == FD_STDOUT || fd == FD_STDERR) {
-    char *str = (char *)buf;
-    for (size_t i = 0; i < len; i++) {
-      _putc(str[i]);
+ssize_t fs_write(int fd, const void *buf, size_t len) {
+    Finfo *f = &file_table[fd];
+
+    if (fd == 1 || fd == 2) {
+        for (size_t i = 0; i < len; i++) {
+            _putc(((char *)buf)[i]);
+        }
+        return len;
     }
-    return len;
-  }
 
-  Finfo *file = &file_table[fd];
+    if (strcmp(f->name, "/dev/fb") == 0) {
+        fb_write(buf, f->open_offset, len);
+        f->open_offset += len;
+        return len;
+    }
 
-  if (fd == FD_FB) {
-    size_t write_len = fb_write(buf, file->open_offset, len);
-    file->open_offset += write_len;
+    ssize_t write_len = len;
+    if (f->open_offset + len > f->size) {
+        write_len = f->size - f->open_offset;
+    }
+    if (write_len <= 0) return 0;
+
+    ramdisk_write(buf, f->disk_offset + f->open_offset, write_len);
+    f->open_offset += write_len;
     return write_len;
-  }
-
-  if (file->open_offset + len > file->size) {
-    len = file->size - file->open_offset;
-  }
-
-  if (len == 0) {
-    return 0;
-  }
-
-  ramdisk_write(buf, file->disk_offset + file->open_offset, len);
-  file->open_offset += len;
-  return len;
 }
-
 // 4. Reposition read/write file offset
 off_t fs_lseek(int fd, off_t offset, int whence) {
   Finfo *file = &file_table[fd];
