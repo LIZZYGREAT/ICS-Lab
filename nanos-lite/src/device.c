@@ -39,6 +39,7 @@ void fb_write(const void *buf, off_t offset, size_t len) {
   x = offset % _screen.width;  
   _draw_rect((const uint32_t *)buf, x, y, len, 1);
   //memcpy((char *)fb + offset, buf, len);
+  _draw_sync();
 }
 
 void init_device() {
