@@ -124,3 +124,16 @@ make_EHelper(bsr) {
   
   print_asm_template2(bsr);
 }
+
+make_EHelper(movs) {
+  int width = decoding.dest.width;
+
+  uint32_t val = vaddr_read(cpu.esi, width);
+  vaddr_write(cpu.edi, width, val);
+
+  int inc = ((cpu.eflags & 0x400) == 0) ? width : -width;
+  cpu.esi += inc;
+  cpu.edi += inc;
+
+  print_asm("movs");
+}
