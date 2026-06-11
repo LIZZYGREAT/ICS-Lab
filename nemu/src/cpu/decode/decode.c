@@ -27,24 +27,25 @@ static inline make_DopHelper(I) {
  * function to decode it.
  */
 /* sign immediate */
-
-
 static inline make_DopHelper(SI) {
   assert(op->width == 1 || op->width == 4);
   op->type = OP_TYPE_IMM;
 
+  /* Use instr_fetch() to read `op->width' bytes of memory
+   * pointed by `eip'. Interpret the result as a signed immediate,
+   * and assign it to op->simm.
+   */
   op->simm = instr_fetch(eip, op->width);
-
-  if (op->width == 1) {
-    op->simm = (int8_t)op->simm; 
-  }
-
-  rtl_li(&op->val, op->simm);
+  if (op->width == 1)
+    op->simm = (int8_t)op->simm;
+  if (load_val)
+    rtl_li(&op->val, op->simm);
 
 #ifdef DEBUG
   snprintf(op->str, OP_STR_SIZE, "$0x%x", op->simm);
 #endif
 }
+
 /* I386 manual does not contain this abbreviation.
  * It is convenient to merge them into a single helper function.
  */
@@ -307,3 +308,9 @@ void operand_write(Operand *op, rtlreg_t* src) {
   else if (op->type == OP_TYPE_MEM) { rtl_sm(&op->addr, op->width, src); }
   else { assert(0); }
 }
+
+make_DHelper(r2a) {
+  decode_op_a(eip, id_dest, true);
+  decode_op_r(eip, id_src, true);
+}
+

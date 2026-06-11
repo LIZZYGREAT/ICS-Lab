@@ -9,7 +9,7 @@
 // TODO: discuss with syscall interface
 #ifndef __ISA_NATIVE__
 
-extern char _end;
+// FIXME: this is temporary
 
 int _syscall_(int type, uintptr_t a0, uintptr_t a1, uintptr_t a2){
   int ret = -1;
@@ -20,46 +20,38 @@ int _syscall_(int type, uintptr_t a0, uintptr_t a1, uintptr_t a2){
 void _exit(int status) {
   _syscall_(SYS_exit, status, 0, 0);
 }
+
 int _open(const char *path, int flags, mode_t mode) {
-  // Trigger SYS_open
-  return _syscall_(SYS_open, (uintptr_t)path, flags, mode);
-}
-
-int _read(int fd, void *buf, size_t count) {
-  // Trigger SYS_read
-  return _syscall_(SYS_read, fd, (uintptr_t)buf, count);
-}
-
-int _close(int fd) {
-  // Trigger SYS_close
-  return _syscall_(SYS_close, fd, 0, 0);
-}
-
-off_t _lseek(int fd, off_t offset, int whence) {
-  // Trigger SYS_lseek
-  return _syscall_(SYS_lseek, fd, offset, whence);
+  return _syscall_(SYS_open, (uintptr_t)path, (uintptr_t)flags, (uintptr_t)mode);
 }
 
 int _write(int fd, void *buf, size_t count){
-    return _syscall_(SYS_write, fd, (uintptr_t)buf, count);  
+  return _syscall_(SYS_write, (uintptr_t)fd, (uintptr_t)buf, (uintptr_t)count);
 }
 
+extern char end;
+intptr_t program_break = (intptr_t)&end;
+
 void *_sbrk(intptr_t increment){
-  static intptr_t current_brk = 0;
+  intptr_t old_program_break = program_break;
+  intptr_t addr = program_break + increment;
+  
+  if(_syscall_(SYS_brk, addr, 0, 0) != 0) 
+    return (void *)-1;
+  program_break = addr;
+  return (void *)old_program_break;
+}
 
-  if (current_brk == 0) {
-    current_brk = (intptr_t)&_end;
-  }
+int _read(int fd, void *buf, size_t count) {
+  return _syscall_(SYS_read, (uintptr_t)fd, (uintptr_t)buf, (uintptr_t)count);
+}
 
-  intptr_t old_brk = current_brk;
-  intptr_t new_brk = current_brk + increment;
+int _close(int fd) {
+  return _syscall_(SYS_close, (uintptr_t)fd, 0, 0);
+}
 
-  if (_syscall_(SYS_brk, new_brk, 0, 0) == 0) {
-    current_brk = new_brk;
-    return (void *)old_brk;
-  }
-
-  return (void *)-1;
+off_t _lseek(int fd, off_t offset, int whence) {
+  return _syscall_(SYS_lseek, (uintptr_t)fd, (uintptr_t)offset, (uintptr_t)whence);
 }
 
 // The code below is not used by Nanos-lite.

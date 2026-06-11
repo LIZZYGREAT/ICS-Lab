@@ -12,8 +12,6 @@ static inline void rtl_li(rtlreg_t* dest, uint32_t imm) {
   *dest = imm;
 }
 
-void rtl_setcc(rtlreg_t* dest, uint8_t subcode);
-
 #define c_add(a, b) ((a) + (b))
 #define c_sub(a, b) ((a) - (b))
 #define c_and(a, b) ((a) & (b))
@@ -113,13 +111,28 @@ static inline void rtl_sr(int r, int width, const rtlreg_t* src1) {
   }
 }
 
+static inline void rtl_lcr(rtlreg_t* dest, int index) {
+  switch (index) {
+    case 0: *dest = cpu.cr0; return;
+    case 3: *dest = cpu.cr3; return;
+    default: assert(0);
+  }
+}
+
+static inline void rtl_scr(int index, const rtlreg_t* src) {
+  switch (index) {
+    case 0: cpu.cr0 = *src; return;
+    case 3: cpu.cr3 = *src; return;
+    default: assert(0);
+  }
+}
 
 #define make_rtl_setget_eflags(f) \
   static inline void concat(rtl_set_, f) (const rtlreg_t* src) { \
-    cpu.eflags.f = *src; \
+    cpu.f = *src; \
   } \
   static inline void concat(rtl_get_, f) (rtlreg_t* dest) { \
-    *dest = cpu.eflags.f; \
+    *dest = cpu.f; \
   }
 
 make_rtl_setget_eflags(CF)
@@ -129,74 +142,69 @@ make_rtl_setget_eflags(SF)
 
 static inline void rtl_mv(rtlreg_t* dest, const rtlreg_t *src1) {
   // dest <- src1
-  TODO();
+  *dest = *src1;
 }
 
 static inline void rtl_not(rtlreg_t* dest) {
-    *dest = ~(*dest);
+  // dest <- ~dest
+  *dest = ~*dest;
 }
 
 static inline void rtl_sext(rtlreg_t* dest, const rtlreg_t* src1, int width) {
   // dest <- signext(src1[(width * 8 - 1) .. 0])
-  switch (width) {
-    case 1:
-      *dest = (int32_t)(int8_t)(*src1);
-      break;
-    case 2:
-      *dest = (int32_t)(int16_t)(*src1);
-      break;
-    case 4:
-      *dest = (int32_t)(*src1);
-      break;
-    default:
-      panic("Unsupported width in rtl_sext");
-  }
+  int sbit = (4 - width) * 8;
+  *dest = ((int)(*src1 << sbit) >> sbit);
 }
 
+// only for 32bit
 static inline void rtl_push(const rtlreg_t* src1) {
   // esp <- esp - 4
-  cpu.esp -= 4;
   // M[esp] <- src1
-  vaddr_write(cpu.esp, 4, *src1);
+  rtl_subi(&reg_l(R_ESP), &reg_l(R_ESP), 4);
+  rtl_sm(&reg_l(R_ESP), 4, src1);
 }
 
+// only for 32bit
 static inline void rtl_pop(rtlreg_t* dest) {
   // dest <- M[esp]
-  *dest = vaddr_read(cpu.esp, 4);
   // esp <- esp + 4
-  cpu.esp += 4;
+  rtl_lm(dest, &reg_l(R_ESP), 4);
+  rtl_addi(&reg_l(R_ESP), &reg_l(R_ESP), 4);
 }
 
 static inline void rtl_eq0(rtlreg_t* dest, const rtlreg_t* src1) {
-  // Check if src1 is equal to 0, store 1 in dest if true, else 0
+  // dest <- (src1 == 0 ? 1 : 0)
   *dest = (*src1 == 0 ? 1 : 0);
 }
 
 static inline void rtl_eqi(rtlreg_t* dest, const rtlreg_t* src1, int imm) {
-  // Check if src1 is equal to the immediate value imm, store 1 in dest if true, else 0
+  // dest <- (src1 == imm ? 1 : 0)
   *dest = (*src1 == imm ? 1 : 0);
 }
 
 static inline void rtl_neq0(rtlreg_t* dest, const rtlreg_t* src1) {
-  // Check if src1 is not equal to 0, store 1 in dest if true, else 0
+  // dest <- (src1 != 0 ? 1 : 0)
   *dest = (*src1 != 0 ? 1 : 0);
 }
 
 static inline void rtl_msb(rtlreg_t* dest, const rtlreg_t* src1, int width) {
-  // Extract the most significant bit (MSB) based on the specified width in bytes
-  // Multiply width by 8 to get total bits, subtract 1 to get the shift amount
-  // Mask with 0x1 to isolate the single MSB
+  // dest <- src1[width * 8 - 1]
   *dest = (*src1 >> (width * 8 - 1)) & 0x1;
 }
 
+/*
+ * Attention: commands below use temporary register t3 
+ */
 static inline void rtl_update_ZF(const rtlreg_t* result, int width) {
   // eflags.ZF <- is_zero(result[width * 8 - 1 .. 0])
-  cpu.eflags.ZF = ((*result << (32 - width * 8)) == 0) ? 1 : 0;
+  t3 = ((*result << (4 - width) * 8) == 0);
+  rtl_set_ZF(&t3);
 }
 
 static inline void rtl_update_SF(const rtlreg_t* result, int width) {
-  // eflags.SF <- sign(result[width * 8 - 1 .. 0])
-  cpu.eflags.SF = (*result >> (width * 8 - 1)) & 0x1;
+  // eflags.SF <- is_sign(result[width * 8 - 1 .. 0])
+  rtl_msb(&t3, result, width);
+  rtl_set_SF(&t3);
 }
 
 static inline void rtl_update_ZFSF(const rtlreg_t* result, int width) {

@@ -1,153 +1,126 @@
 #include "cpu/exec.h"
 
 make_EHelper(add) {
-  rtl_add(&t0, &id_dest->val, &id_src->val);
-  
-  operand_write(id_dest, &t0);
+  rtl_add(&t2, &id_dest->val, &id_src->val);
+  operand_write(id_dest, &t2);
 
-  rtl_update_ZF(&t0, id_dest->width);
-  rtl_update_SF(&t0, id_dest->width);
+  rtl_update_ZFSF(&t2, id_dest->width);
 
-  rtl_sltu(&t1, &t0, &id_dest->val);
-  rtl_set_CF(&t1);
+  // CF = (result < dest)
+  rtl_sltu(&t0, &t2, &id_dest->val);
+  rtl_set_CF(&t0);
 
-  rtl_xor(&t1, &id_dest->val, &id_src->val); 
-  rtl_not(&t1);                         
-  rtl_xor(&t2, &id_dest->val, &t0);        
-  rtl_and(&t1, &t1, &t2);                 
-  rtl_msb(&t1, &t1, id_dest->width);     
-  rtl_set_OF(&t1);
+  // OF = (msb(dest) == msb(src) && msb(dest) != msb(result))
+  rtl_xor(&t0, &id_dest->val, &id_src->val);
+  rtl_not(&t0);
+  rtl_xor(&t1, &id_dest->val, &t2);
+  rtl_and(&t0, &t0, &t1);
+  rtl_msb(&t0, &t0, id_dest->width);
+  rtl_set_OF(&t0);
 
   print_asm_template2(add);
 }
 
 make_EHelper(sub) {
-  // 1. Calculate the subtraction result and store it in temporary register t0
   rtl_sub(&t0, &id_dest->val, &id_src->val);
-  
-  // 2. Write the result back to the destination operand
   operand_write(id_dest, &t0);
   
-  // 3. Update basic EFLAGS: ZF and SF based on the result and width
-  rtl_update_ZF(&t0, id_dest->width);
-  rtl_update_SF(&t0, id_dest->width);
+  rtl_update_ZFSF(&t0, id_dest->width);
   
-  // 4. Update CF (Carry/Borrow Flag) for unsigned subtraction
-  // If destination is strictly less than source, a borrow occurred
-  cpu.eflags.CF = (id_dest->val < id_src->val) ? 1 : 0;
-  
-  // 5. Update OF (Overflow Flag) for signed subtraction
-  // Extract sign bits dynamically based on operand width
-  uint32_t sign_dest = (id_dest->val >> (id_dest->width * 8 - 1)) & 0x1;
-  uint32_t sign_src  = (id_src->val >> (id_src->width * 8 - 1)) & 0x1;
-  uint32_t sign_res  = (t0 >> (id_dest->width * 8 - 1)) & 0x1;
-  
-  // Apply the derived boolean logic for overflow detection
-  cpu.eflags.OF = ((sign_dest != sign_src) && (sign_src == sign_res)) ? 1 : 0;
-  
-  // 6. Print assembly log (Framework built-in)
-  print_asm_template2(sub);
-}
-
-make_EHelper(cmp) {
-  // 1. Perform subtraction: t0 = dest - src
-  rtl_sub(&t0, &id_dest->val, &id_src->val);
-
-  // 2. Update ZF and SF based on the result
-  rtl_update_ZF(&t0, id_dest->width);
-  rtl_update_SF(&t0, id_dest->width);
-
-  // 3. Update CF (Borrow Flag): set if dest < src (unsigned)
-  rtl_sltu(&t1, &id_dest->val, &id_src->val);
-  rtl_set_CF(&t1);
-
-  // 4. Update OF: set if signs of dest and src are different, 
-  // and signs of dest and result are different.
-  // OF = MSB((dest ^ src) & (dest ^ t0))
+  // OF = (msb(dest) != msb(src) && msb(dest) != msb(result))
   rtl_xor(&t1, &id_dest->val, &id_src->val);
   rtl_xor(&t2, &id_dest->val, &t0);
   rtl_and(&t1, &t1, &t2);
   rtl_msb(&t1, &t1, id_dest->width);
   rtl_set_OF(&t1);
+  
+  // CF = (id_dest < result)
+  rtl_sltu(&t1, &id_dest->val, &t0);
+  rtl_set_CF(&t1);
 
-  // 5. Note: CMP does not write the result back to id_dest.
-  // We simply skip the operand_write() call here.
+  print_asm_template2(sub);
+}
+
+make_EHelper(cmp) {
+  rtl_sub(&t0, &id_dest->val, &id_src->val);
+  rtl_update_ZFSF(&t0, id_dest->width);
+  
+  // OF = (msb(dest) != msb(src) && msb(dest) != msb(result))
+  rtl_xor(&t1, &id_dest->val, &id_src->val);
+  rtl_xor(&t2, &id_dest->val, &t0);
+  rtl_and(&t1, &t1, &t2);
+  rtl_msb(&t1, &t1, id_dest->width);
+  rtl_set_OF(&t1);
+  
+  // CF = (id_dest < result)
+  rtl_sltu(&t1, &id_dest->val, &t0);
+  rtl_set_CF(&t1);
 
   print_asm_template2(cmp);
 }
 
 make_EHelper(inc) {
-  // 1. Perform increment: t0 = dest + 1
-  rtl_addi(&t0, &id_dest->val, 1);
-  
-  // 2. Write back the result
-  operand_write(id_dest, &t0);
+  rtl_addi(&t2, &id_dest->val, 1);
+  operand_write(id_dest, &t2);
 
-  // 3. Update EFLAGS: ZF and SF based on the result
-  rtl_update_ZF(&t0, id_dest->width);
-  rtl_update_SF(&t0, id_dest->width);
+  rtl_update_ZFSF(&t2, id_dest->width);
 
-  // 4. Update OF for INC (Overflow occurs ONLY if dest was maximum positive value)
-  // For 32-bit: 0x7FFFFFFF + 1 -> 0x80000000 (positive to negative)
-  // We can simulate this using the RTL abstraction
-  rtl_xori(&t1, &id_dest->val, ~0u >> ((4 - id_dest->width) * 8 + 1)); 
-  rtl_eq0(&t1, &t1); // t1 is 1 if dest was max positive, else 0
-  rtl_set_OF(&t1);
+  // CF = (result < dest)
+  rtl_sltu(&t0, &t2, &id_dest->val);
+  rtl_set_CF(&t0);
 
-  // NOTE: STRICTLY NO CF UPDATE FOR INC
+  // OF = (msb(dest) == msb(src) && msb(dest) != msb(result))
+  rtl_xor(&t0, &id_dest->val, &id_src->val);
+  rtl_not(&t0);
+  rtl_xor(&t1, &id_dest->val, &t2);
+  rtl_and(&t0, &t0, &t1);
+  rtl_msb(&t0, &t0, id_dest->width);
+  rtl_set_OF(&t0);
 
   print_asm_template1(inc);
 }
 
 make_EHelper(dec) {
-  // 1. Perform decrement: t0 = dest - 1
   rtl_subi(&t0, &id_dest->val, 1);
-  
-  // 2. Write back the result
   operand_write(id_dest, &t0);
-
-  // 3. Update EFLAGS: ZF and SF based on the result
-  rtl_update_ZF(&t0, id_dest->width);
-  rtl_update_SF(&t0, id_dest->width);
-
-  // 4. Update OF for DEC (Overflow occurs ONLY if dest was minimum negative value)
-  // For 32-bit: 0x80000000 - 1 -> 0x7FFFFFFF (negative to positive)
-  // Mask MSB to check if it's the minimum negative number
-  rtl_xori(&t1, &id_dest->val, 1u << (id_dest->width * 8 - 1));
-  rtl_eq0(&t1, &t1);
+  
+  rtl_update_ZFSF(&t0, id_dest->width);
+  
+  // OF = (msb(dest) != msb(src) && msb(dest) != msb(result))
+  rtl_xor(&t1, &id_dest->val, &id_src->val);
+  rtl_xor(&t2, &id_dest->val, &t0);
+  rtl_and(&t1, &t1, &t2);
+  rtl_msb(&t1, &t1, id_dest->width);
   rtl_set_OF(&t1);
-
-  // NOTE: STRICTLY NO CF UPDATE FOR DEC
+  
+  // CF = (id_dest < result)
+  rtl_sltu(&t1, &id_dest->val, &t0);
+  rtl_set_CF(&t1);
 
   print_asm_template1(dec);
 }
 
-
 make_EHelper(neg) {
-  // 1. CF is set to 0 if the operand is 0, otherwise set to 1.
-  rtl_neq0(&t1, &id_dest->val);
-  rtl_set_CF(&t1);
+  // CF = (dest != 0)
+  rtl_neq0(&t0, &id_dest->val);
+  rtl_set_CF(&t0);
 
-  // 2. Perform two's complement negation: 0 - dest
-  rtl_li(&t0, 0);
-  rtl_sub(&t2, &t0, &id_dest->val);
-  operand_write(id_dest, &t2);
-
-  // 3. Update EFLAGS (ZF, SF) based on the result
-  rtl_update_ZFSF(&t2, id_dest->width);
-
-  // 4. OF is set to 1 only if the original operand is the most negative number
-  // (e.g., 0x80000000 for 32-bit). Otherwise, it is cleared to 0.
-  rtl_xori(&t0, &id_dest->val, 1u << (id_dest->width * 8 - 1));
-  rtl_eq0(&t0, &t0);
+  rtl_sub(&t0, &tzero, &id_dest->val);
+  operand_write(id_dest, &t0);
+  
+  rtl_update_ZFSF(&t0, id_dest->width);
+  
+  // OF = (msb(result) == msb(dest)) 
+  rtl_xor(&t0, &t0, &id_dest->val);
+  rtl_not(&t0);
+  rtl_msb(&t0, &t0, id_dest->width);
   rtl_set_OF(&t0);
-
+  
   print_asm_template1(neg);
 }
 
 make_EHelper(adc) {
   rtl_add(&t2, &id_dest->val, &id_src->val);
-  rtl_sltu(&t3, &t2, &id_dest->val);
   rtl_get_CF(&t1);
   rtl_add(&t2, &t2, &t1);
   operand_write(id_dest, &t2);
@@ -155,7 +128,6 @@ make_EHelper(adc) {
   rtl_update_ZFSF(&t2, id_dest->width);
 
   rtl_sltu(&t0, &t2, &id_dest->val);
-  rtl_or(&t0, &t3, &t0);
   rtl_set_CF(&t0);
 
   rtl_xor(&t0, &id_dest->val, &id_src->val);
@@ -170,7 +142,6 @@ make_EHelper(adc) {
 
 make_EHelper(sbb) {
   rtl_sub(&t2, &id_dest->val, &id_src->val);
-  rtl_sltu(&t3, &id_dest->val, &t2);
   rtl_get_CF(&t1);
   rtl_sub(&t2, &t2, &t1);
   operand_write(id_dest, &t2);
@@ -178,7 +149,6 @@ make_EHelper(sbb) {
   rtl_update_ZFSF(&t2, id_dest->width);
 
   rtl_sltu(&t0, &id_dest->val, &t2);
-  rtl_or(&t0, &t3, &t0);
   rtl_set_CF(&t0);
 
   rtl_xor(&t0, &id_dest->val, &id_src->val);
