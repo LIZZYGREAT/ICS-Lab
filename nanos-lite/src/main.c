@@ -32,5 +32,6 @@ int main() {
 
   uint32_t entry = loader(NULL, "/bin/bmptest");
   ((void (*)(void))entry)();
+
   panic("Should not reach here");
 }
