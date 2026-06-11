@@ -107,4 +107,20 @@ make_EHelper(xchg) {
   operand_write(id_src, &t0);
   print_asm_template2(xchg);
 }
-
+make_EHelper(bsr) {
+  if (id_src->val == 0) {
+    cpu.eflags |= 0x40;
+  } else {
+    cpu.eflags &= ~0x40; 
+    int bit_idx = (id_src->width == 2) ? 15 : 31;
+    
+    while ((id_src->val & (1u << bit_idx)) == 0) {
+      bit_idx--;
+    }
+    
+    t0 = bit_idx; 
+    operand_write(id_dest, &t0);
+  }
+  
+  print_asm_template2(bsr);
+}
